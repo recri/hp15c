@@ -1,0 +1,30 @@
+{
+  "/": {
+    "src/components/calculator-app.js": {
+      "type": "script",
+      "weight": 1
+    },
+    "src/components/calculator-base.js": {
+      "type": "script",
+      "weight": 1
+    },
+    "node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js": {
+      "type": "script",
+      "weight": 1
+    }
+  },
+  "/about": {
+    "src/components/calculator-app.js": {
+      "type": "script",
+      "weight": 1
+    },
+    "src/components/calculator-about.js": {
+      "type": "script",
+      "weight": 1
+    },
+    "node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js": {
+      "type": "script",
+      "weight": 1
+    }
+  }    
+}

@@ -1,0 +1,3 @@
+[ ] implement basic google "calculator"
+[ ] use ganja.js to implement clifford algebras
+[x] make an appropriate icon
