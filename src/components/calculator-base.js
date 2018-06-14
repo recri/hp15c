@@ -23,63 +23,63 @@ export class CalculatorBase extends connect(store)(PageViewElement) {
     // keypad is a list of rows
     get keypad() {
 	return [ 		// row 0
-	    [ { label: 'Rad', alabel: "switch from radians to degrees", clnames:"angle" },
-	      { label: 'Deg', alabel: "switch from degrees to radians", clnames:"angle" },
+	    [ { label: 'Rad', alabel: "switch from radians to degrees", dclass:"angle rad" },
+	      { label: 'Deg', alabel: "switch from degrees to radians", dclass:"angle deg" },
 	      { label: 'a!', alabel: "factorial" },
-	      { label: '(', alabel: "left parenthesis" },
-	      { label: ')', alabel: "right parenthesis" },
-	      { label: '%', alabel: "percentage" },
-	      { label: 'AC', alabel: "all clear", clnames: "acesAC",
-		alt: { label: 'CE', alabel: "clear entry", clnames: "acesCE" }
+	      { label: '(', alabel: "left parenthesis", dclass: "op" },
+	      { label: ')', alabel: "right parenthesis", dclass: "op" },
+	      { label: '%', alabel: "percentage", dclass: "op" },
+	      { label: 'AC', alabel: "all clear", dclass: "erase", sclass: "acesAC",
+		alt: { label: 'CE', alabel: "clear entry", sclass: "acesCE" }
 	      },
 	    ],[			// row 1
-		{ label: 'Inv', alabel: "inverse", clnames: "inverse" },
-		{ label: 'sin', alabel: "sine", clnames: "uninvert",
-		  alt: { label: html`sin<sup>&minus;1</sup>`, alabel: 'arcsine', clnames: "doinvert" }
+		{ label: 'Inv', alabel: "inverse", dclass: "inverse" },
+		{ label: 'sin', alabel: "sine", sclass: "uninvert",
+		  alt: { label: html`sin<sup>&minus;1</sup>`, alabel: 'arcsine', sclass: "doinvert" }
 		},
-		{ label: 'ln', alabel: "natural logarithm", clnames: "uninvert", 
-		  alt: { label: html` e<sup>x</sup>`, alabel: "E to the power of X", clnames: "doinvert" }
+		{ label: 'ln', alabel: "natural logarithm", sclass: "uninvert", 
+		  alt: { label: html` e<sup>x</sup>`, alabel: "E to the power of X", sclass: "doinvert" }
 		},
-		{ label: '7' },
-		{ label: '8' },
-		{ label: '9' },
-		{ label: html`&#xf7;`, alabel: "divide" },
+		{ label: '7', dclass:"corepad" },
+		{ label: '8', dclass:"corepad" },
+		{ label: '9', dclass:"corepad" },
+		{ label: html`&#xf7;`, alabel: "divide", dclass: "op" },
 	    ], [		// row 2
 		{ label: html`&pi;`, alabel: "pi" },
-		{ label: 'cos', alabel: "cosine", clnames: "uninvert",
-		  alt: { label: html`cos<sup>&minus;1</sup>`, alabel: "arccosine", clnames: "doinvert" }
+		{ label: 'cos', alabel: "cosine", sclass: "uninvert",
+		  alt: { label: html`cos<sup>&minus;1</sup>`, alabel: "arccosine", sclass: "doinvert" }
 		},
-		{ label: 'log', alabel: "logarithm", clnames: "uninvert",
-		  alt: { label: html` 10<sup>x</sup>`, alabel: "ten to the power of X", clnames: "doinvert" }
+		{ label: 'log', alabel: "logarithm", sclass: "uninvert",
+		  alt: { label: html` 10<sup>x</sup>`, alabel: "ten to the power of X", sclass: "doinvert" }
 		},
-		{ label: '4' },
-		{ label: '5' },
-		{ label: '6' },
-		{ label: html`&#xd7;`, alabel: "multiply" },
+		{ label: '4', dclass:"corepad" },
+		{ label: '5', dclass:"corepad" },
+		{ label: '6', dclass:"corepad" },
+		{ label: html`&#xd7;`, alabel: "multiply", dclass: "op" },
 	    ], [		// row 3
 		{ label: 'e', alabel: "euler's number" },
-		{ label: 'tan', alabel: "tangent", clnames: "uninvert",
-		  alt: { label: html` tan<sup>&minus;1`, alabel: "arctangent", clnames: "doinvert" }
+		{ label: 'tan', alabel: "tangent", sclass: "uninvert",
+		  alt: { label: html` tan<sup>&minus;1`, alabel: "arctangent", sclass: "doinvert" }
 		},
-		{ label: html`&#x221a;`, alabel: "square root", clnames: "uninvert",
-		  alt: { label: html` x<sup>2</sup>`, alabel: "square", clnames: "doinvert" }
+		{ label: html`&#x221a;`, alabel: "square root", sclass: "uninvert",
+		  alt: { label: html` x<sup>2</sup>`, alabel: "square", sclass: "doinvert" }
 		},
-		{ label: '1' },
-		{ label: '2' },
-		{ label: '3' },
-		{ label: html`&minus;`, alabel: "minus" },
+		{ label: '1', dclass:"corepad" },
+		{ label: '2', dclass:"corepad" },
+		{ label: '3', dclass:"corepad" },
+		{ label: html`&minus;`, alabel: "minus", dclass: "op" },
 	    ], [		// row 4
-		{ label: 'Ans', alabel: "answer", clnames: "uninvert",
-		  alt: { label: 'Rnd', alabel: "random", clnames: "doinvert" }
+		{ label: 'Ans', alabel: "answer", sclass: "uninvert",
+		  alt: { label: 'Rnd', alabel: "random", sclass: "doinvert" }
 		},
 		{ label: 'EXP', alabel: "exponential" },
-		{ label: html`x<sup>y</sup>`, alabel: "X to the power of Y", clnames: "uninvert",
-		  alt: { label: html` <sup>y</sup>&#x221a;x`, alabel: "Y root of X", clnames: "doinvert" }
+		{ label: html`x<sup>y</sup>`, alabel: "X to the power of Y", sclass: "uninvert",
+		  alt: { label: html` <sup>y</sup>&#x221a;x`, alabel: "Y root of X", sclass: "doinvert" }
 		},
-		{ label: '0' },
-		{ label: '.', alabel: "point" },
-		{ label: '=', alabel: "equals" },
-		{ label: '+', alabel: "plus" },
+		{ label: '0', dclass:"corepad" },
+		{ label: '.', alabel: "point", dclass:"corepad" },
+		{ label: '=', alabel: "equals", dclass:"equals op" },
+		{ label: '+', alabel: "plus", dclass: "op" },
 	    ]
 	];
     }
@@ -88,51 +88,126 @@ export class CalculatorBase extends connect(store)(PageViewElement) {
 	const computedStyles = () => {
 	    var style = html``;
 	    if (_invert)
-		style = html`${style}<style>span.uninvert{display:none;}span.doinvert{display:inline;}div.invert{background:lightgrey;}</style>`;
+		style = html`${style}<style>:host { --span-uninvert-display: none; --span-doinvert-display:table-cell; --div-invert-background:lightgrey;}</style>`;
 	    else
-		style = html`${style}<style>span.uninvert{display:inline;}span.doinvert{display:none;}div.invert{background:darkgrey;}</style>`;
+		style = html`${style}<style>:host { --span-uninvert-display:table-cell; --span-doinvert-display:none; --div-invert-background:darkgrey;}</style>`;
 	    if (_aces)
-		style = html`${style}<style>span.acesAC{display:none;}span.acesCE{display:inline;}</style>`;
+		style = html`${style}<style>:host { --span-acesAC-display:none; --span-acesCE-display:table-cell;}</style>`;
 	    else
-		style = html`${style}<style>span.acesAC{display:inline;}span.acesCE{display:none;}</style>`;
+		style = html`${style}<style>:host { --span-acesAC-display:table-cell;--span-acesCE-display:none;}</style>`;
 	    return style;
 	}
-	const button = (r,c) => {
+	const button = (r,c,side) => {
 	    var k = this.keypad[r][c], a = k.alt;
 	    const span = (x) =>
 		  (! x) ? html`` :
-		  (! x.clnames) ? html`<span aria-label$="${x.alabel}" tabindex="0">${x.label}</span>` :
-		  html`<span class$="${x.clnames}" aria-label$="${x.alabel}" tabindex="0">${x.label}</span>` ;
-	    const spans = k && a ?
-		  html`${span(k)}${span(a)}` :
-		  html`${span(k)}`;
-	    // console.log(`button(${r},${c}) -> ${k} -> ${k.label} ? ${k.clnames}?`);
-	    return html`<div class$="col col-${c}" id="cell${r}${c}"><div>${spans}</div></div>`
+		  (! x.sclass) ? html`<span aria-label$="${x.alabel}" tabindex="0">${x.label}</span>` :
+		  html`<span class$="${x.sclass}" aria-label$="${x.alabel}" tabindex="0">${x.label}</span>` ;
+	    const spans = k && a ? html`${span(k)}${span(a)}` : html`${span(k)}`;
+	    return k.dclass ? 
+		html`<div class$="col ${side} col-${c} ${k.dclass}" id="cell${r}${c}"><div class="in-col">${spans}</div></div>` :
+		html`<div class$="col ${side} col-${c}" id="cell${r}${c}"><div class="in-col">${spans}</div></div>`;
 	}
 	const lftGenerate = (r) =>  
-	      html`<div class$="row row-${r}">${[0,1,2].map(c => button(r,c))}</div>`;
+	      html`<div class$="row lft row-${r}">${[0,1,2].map(c => button(r,c,'lft'))}</div>`;
 	const rgtGenerate = (r) => 
-	      html`<div class$="row row-${r}">${[3,4,5,6].map(c => button(r,c))}</div>`;
+	      html`<div class$="row rgt row-${r}">${[3,4,5,6].map(c => button(r,c,'rgt'))}</div>`;
 	return html`
 ${SharedStyles}
 ${computedStyles()}
 <style>
-  div.frame { width:600px; height:354px; }
-  div.mem { width:100%; height: 6%; display: block; position: relative; text-align:right; }    
-  div.txt { width: 100%; height: 21%; display: block; position: relative; text-align:right; }
-  div.kpd { width:100%; height: 63%; display: block; position: relative; text-align:center; }
-  div.lft, div.rgt { display: inline-block; top:0; height:100%; overflow:hidden; position:absolute; vertical-align:bottom; }
-  div.lft { left: 0; width:42.85%; }
-  div.rgt { left: 42.85%; width:57.15%; }
-  div.row { display: block; height: 20%; width:100%; }
-  div.lft div.col { width:33.3%; }
-  div.rgt div.col { width:25.0%; }
-  div.col { display: inline-block; position: absolute; vertical-align: bottom; }
-  div.row-0 { top:0%; }
-  div.row-1 { top:20%; }
-  div.row-2 { top:40%; }
-  div.row-3 { top:60%; }
-  div.row-4 { top:80%; }
+  :host {
+    --div-darker-background: #d6d6d6;
+    --div-darker-color: #444;
+    --div-darker-border: 1px solid #c6c6c6;
+    --div-lighter-background: #f5f5f5;
+    --div-lighter-color: #444;
+    --div-lighter-border: 1px solid #dedede;
+    --div-highlight-background: #4d90fe;
+    --div-highlight-color: #fefefe;
+    --div-highlight-border: 1px solid #2f5bb7;
+    --div-highlight-font-weight: bold;
+  }
+  div.frame { 
+    width:600px;
+    height:354px;
+    position: relative;
+  }
+  div.mem {
+    width:100%;
+    height: 6%;
+    display: block;
+    position: relative;
+    text-align:right;
+  }    
+  div.txt {
+    width: 100%;
+    height: 21%;
+    display: block;
+    position: relative;
+    text-align:right;
+  }
+  /* keypad */
+  div.kpd { 
+    bottom: 0;
+    height: 72%;
+    position: absolute;
+    width: 100%;
+    z-index: 2;
+  }
+  /* left and right sides of keypad */
+  div.side {
+    display: inline-block;
+    height:100%;
+    overflow:hidden;
+    position:absolute;
+  }
+  div.lft.side {
+    left:0;
+    width:42.85%;
+  }
+  div.rgt.side { 
+    left:42.85%;
+    width:57.15%;
+  }
+  /* rows */
+  div.row {
+    display: block;
+    height: 20%;
+    position: relative;
+  }
+  /* columns and cells */
+  div.col { 
+    display: inline-block;
+    height:100%;
+    position: absolute;
+    vertical-align: bottom;
+  }
+  div.lft.col { width:33.3%; }
+  div.rgt.col { width:25.0%; }
+  div.col.op { font-size: 20px; }
+  div.col.angle, div.col.erase { font-size: 11px; }
+  /* inner column */
+  div.in-col { 
+    width: 88%;
+    height: 85%;
+    -moz-border-radius: 1px;
+    -webkit-border-radius: 1px;
+    border-radius: 1px;
+    cursor: pointer;
+    display: table;
+    margin: 0% 6%;
+    padding: 0;
+    position: relative;
+    text-align: center;
+  }
+  div.in-col span {
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    display: table-cell;
+    vertical-align: middle;
+  }
   div.col-0 { left:0%; }
   div.col-1 { left:33.3%; }
   div.col-2 { left:66.6%; }
@@ -140,18 +215,41 @@ ${computedStyles()}
   div.col-4 { left:25%; }
   div.col-5 { left:50%; }
   div.col-6 { left:75%; }
-  /* div.kpd span { display:inline; } */
+  /* last chance to override */
+  div.in-col span.uninvert { display: var(--span-uninvert-display); }
+  div.in-col span.doinvert { display: var(--span-doinvert-display); }
+  div.invert div.in-col { background: var(--div-invert-background); }
+  div.in-col span.acesAC { display: var(--span-acesAC-display); }
+  div.in-col span.acesCE { display: var(--span-acesCE-display); }
+  div.col div.in-col { 
+    background-color: var(--div-darker-background);
+    color: var(--div-darker-color);
+    font-size: 15px;
+ }
+  div.col.corepad div.in-col {
+    background-color: var(--div-lighter-background);
+    color: var(--span-lighter-color);
+    border: var(--span-lighter-border);
+  }
+  div.col.equals div.in-col { 
+    background-color: var(--div-highlight-background);
+    color: var(--div-highlight-color);
+    border: var(--div-highlight-border);
+    font-weight: var(--div-hightlight-font-weight);
+  }
 </style>
 <section>
   <div class="frame">
     <div class="mem"><span class="mems">${_memo}</span></div>
     <div class="txt"><span class="txts">${_text}</span></div>
-    <div class="kpd">
-      <div class="lft">
-        ${[0,1,2,3,4].map(r => lftGenerate(r))}
-      </div>
-      <div class="rgt">
-        ${[0,1,2,3,4].map(r => rgtGenerate(r))}
+    <div class="wrp">
+      <div class="kpd">
+        <div class="lft side">
+          ${[0,1,2,3,4].map(r => lftGenerate(r))}
+        </div>
+        <div class="rgt side">
+          ${[0,1,2,3,4].map(r => rgtGenerate(r))}
+        </div>
       </div>
     </div>
   </div>
