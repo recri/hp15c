@@ -4,12 +4,31 @@ This code may only be used under the BSD style license found at http://recri.git
 */
 import { html } from '@polymer/lit-element';
 import { PageViewElement } from './page-view-element.js';
+import { GestureEventListeners } from '@polymer/polymer/lib/mixins/gesture-event-listeners.js';
+import * as Gestures from '@polymer/polymer/lib/utils/gestures.js';
+
 import { SharedStyles } from './shared-styles.js';
 
 import { connect } from 'pwa-helpers/connect-mixin.js';
 import { store } from '../store.js';
+import { calcInvert, calcACES, calcRadDeg, calcKeypadInput, calcKeyboardInput } from '../actions/calc.js';
 
-export class CalculatorBase extends connect(store)(PageViewElement) {
+const _ignore = (e) => false;
+
+export class CalculatorBase extends connect(store)(GestureEventListeners(PageViewElement)) {
+    /* hack to get GestureEventListeners activated */
+    constructor() {
+	super();
+	Gestures.addListener(this, 'tap', _ignore);
+	Gestures.addListener(this, 'down', _ignore);
+	Gestures.addListener(this, 'up', _ignore);
+    }
+    disconnectedCallback() {
+	super.disconnectedCallback();
+	Gestures.removeListener(this, 'tap', _ignore);
+	Gestures.removeListener(this, 'down', _ignore);
+	Gestures.removeListener(this, 'up', _ignore);
+    }
     static get properties() {
 	return {
 	    _memo: String,	// Memo text displayed
@@ -23,63 +42,63 @@ export class CalculatorBase extends connect(store)(PageViewElement) {
     // keypad is a list of rows
     get keypad() {
 	return [ 		// row 0
-	    [ { label: 'Rad', alabel: "switch from radians to degrees", dclass:"angle rad" },
-	      { label: 'Deg', alabel: "switch from degrees to radians", dclass:"angle deg" },
-	      { label: 'a!', alabel: "factorial" },
-	      { label: '(', alabel: "left parenthesis", dclass: "op" },
-	      { label: ')', alabel: "right parenthesis", dclass: "op" },
-	      { label: '%', alabel: "percentage", dclass: "op" },
-	      { label: 'AC', alabel: "all clear", dclass: "erase", sclass: "acesAC",
-		alt: { label: 'CE', alabel: "clear entry", sclass: "acesCE" }
+	    [ { label: 'Rad', alabel: "switch from radians to degrees", dclass:"angle rad", emit: () => ['Rad'] },
+	      { label: 'Deg', alabel: "switch from degrees to radians", dclass:"angle deg", emit: () => ['Deg'] },
+	      { label: 'a!', alabel: "factorial", hotkey: '!', emit: () => ['!'] },
+	      { label: '(', alabel: "left parenthesis", dclass: "op", hotkey: '(', emit: () => ['(', ')'] },
+	      { label: ')', alabel: "right parenthesis", dclass: "op", hotkey: ')', emit: () => [')'] },
+	      { label: '%', alabel: "percentage", dclass: "op", hotkey: '%', emit: () => ['%'] },
+	      { label: 'AC', alabel: "all clear", dclass: "erase", sclass: "acesAC", hotkey: '\x7f', emit: () => ['AC'], 
+		alt: { label: 'CE', alabel: "clear entry", sclass: "acesCE", hotkey: '\b', emit: () => ['CE'] }
 	      },
 	    ],[			// row 1
-		{ label: 'Inv', alabel: "inverse", dclass: "inverse" },
-		{ label: 'sin', alabel: "sine", sclass: "uninvert",
-		  alt: { label: html`sin<sup>&minus;1</sup>`, alabel: 'arcsine', sclass: "doinvert" }
+		{ label: 'Inv', alabel: "inverse", dclass: "inverse", emit: () => ['Inv'] },
+		{ label: 'sin', alabel: "sine", sclass: "uninvert", hotkey: 's', emit: () => ['sin(', ')'],
+		  alt: { label: html`sin<sup>&minus;1</sup>`, alabel: 'arcsine', sclass: "doinvert", hotkey: 'S', emit: () => ['arcsin(', ')'] }
 		},
-		{ label: 'ln', alabel: "natural logarithm", sclass: "uninvert", 
-		  alt: { label: html` e<sup>x</sup>`, alabel: "E to the power of X", sclass: "doinvert" }
+		{ label: 'ln', alabel: "natural logarithm", sclass: "uninvert", hotkey: 'l', emit: () => ['ln(', ')'], 
+		  alt: { label: html` e<sup>x</sup>`, alabel: "E to the power of X", sclass: "doinvert", emit: () => ['exp(', ')'] }
 		},
-		{ label: '7', dclass:"corepad" },
-		{ label: '8', dclass:"corepad" },
-		{ label: '9', dclass:"corepad" },
-		{ label: html`&#xf7;`, alabel: "divide", dclass: "op" },
+		{ label: '7', dclass:"corepad", hotkey: '7', emit: () => ['7'] },
+		{ label: '8', dclass:"corepad", hotkey: '8', emit: () => ['8'] },
+		{ label: '9', dclass:"corepad", hotkey: '9', emit: () => ['9'] },
+		{ label: '÷', alabel: "divide", dclass: "op", hotkey: '/', emit: () => ['÷'] },
 	    ], [		// row 2
-		{ label: html`&pi;`, alabel: "pi" },
-		{ label: 'cos', alabel: "cosine", sclass: "uninvert",
-		  alt: { label: html`cos<sup>&minus;1</sup>`, alabel: "arccosine", sclass: "doinvert" }
+		{ label: 'π', alabel: "pi", hotkey: 'p', emit: () => ['π'] },
+		{ label: 'cos', alabel: "cosine", sclass: "uninvert", hotkey: 'c', emit: () => ['cos(', ')'],
+		  alt: { label: html`cos<sup>&minus;1</sup>`, alabel: "arccosine", sclass: "doinvert", hotkey: 'C', emit: () => ['arccos(', ')'] }
 		},
-		{ label: 'log', alabel: "logarithm", sclass: "uninvert",
-		  alt: { label: html` 10<sup>x</sup>`, alabel: "ten to the power of X", sclass: "doinvert" }
+		{ label: 'log', alabel: "logarithm", sclass: "uninvert", hotkey: 'g', emit: () => ['log(', ')'],
+		  alt: { label: html` 10<sup>x</sup>`, alabel: "ten to the power of X", sclass: "doinvert", emit: () => ['pow(10,', ')'] }
 		},
-		{ label: '4', dclass:"corepad" },
-		{ label: '5', dclass:"corepad" },
-		{ label: '6', dclass:"corepad" },
-		{ label: html`&#xd7;`, alabel: "multiply", dclass: "op" },
+		{ label: '4', dclass:"corepad", hotkey: '4', emit: () => ['4'] },
+		{ label: '5', dclass:"corepad", hotkey: '5', emit: () => ['5'] },
+		{ label: '6', dclass:"corepad", hotkey: '6', emit: () => ['6'] },
+		{ label: '×', alabel: "multiply", dclass: "op", hotkey: '*', emit: () => ['×'] },
 	    ], [		// row 3
-		{ label: 'e', alabel: "euler's number" },
-		{ label: 'tan', alabel: "tangent", sclass: "uninvert",
-		  alt: { label: html` tan<sup>&minus;1`, alabel: "arctangent", sclass: "doinvert" }
+		{ label: 'e', alabel: "euler's number", hotkey: 'e', emit: () => ['e'] },
+		{ label: 'tan', alabel: "tangent", sclass: "uninvert", hotkey: 't', emit: () => ['tan(',')'],
+		  alt: { label: html` tan<sup>&minus;1`, alabel: "arctangent", sclass: "doinvert", hotkey: 'T', emit: () => ['arctan(',')'] }
 		},
-		{ label: html`&#x221a;`, alabel: "square root", sclass: "uninvert",
-		  alt: { label: html` x<sup>2</sup>`, alabel: "square", sclass: "doinvert" }
+		{ label: '√', alabel: "square root", sclass: "uninvert", hotkey: 'r', emit: () => ['√(',')'],
+		  alt: { label: html` x<sup>2</sup>`, alabel: "square", sclass: "doinvert", emit: () => ['pow(_,2)'] }
 		},
-		{ label: '1', dclass:"corepad" },
-		{ label: '2', dclass:"corepad" },
-		{ label: '3', dclass:"corepad" },
-		{ label: html`&minus;`, alabel: "minus", dclass: "op" },
+		{ label: '1', dclass:"corepad", hotkey: '1', emit: () => ['1'] },
+		{ label: '2', dclass:"corepad", hotkey: '2', emit: () => ['2'] },
+		{ label: '3', dclass:"corepad", hotkey: '3', emit: () => ['3'] },
+		{ label: '-', alabel: "minus", dclass: "op", hotkey: '-', emit: () => ['-'] },
 	    ], [		// row 4
-		{ label: 'Ans', alabel: "answer", sclass: "uninvert",
-		  alt: { label: 'Rnd', alabel: "random", sclass: "doinvert" }
+		{ label: 'Ans', alabel: "answer", sclass: "uninvert", hotkey: ['a', 'A'], emit: () => ['Ans'],
+		  alt: { label: 'Rnd', alabel: "random", sclass: "doinvert", hotkey: 'R', emit: () => [Math.random()] }
 		},
-		{ label: 'EXP', alabel: "exponential" },
-		{ label: html`x<sup>y</sup>`, alabel: "X to the power of Y", sclass: "uninvert",
-		  alt: { label: html` <sup>y</sup>&#x221a;x`, alabel: "Y root of X", sclass: "doinvert" }
+		{ label: 'EXP', alabel: "exponential", hotkey: 'E', emit: () => ['E'] },
+		{ label: html`x<sup>y</sup>`, alabel: "X to the power of Y", sclass: "uninvert", emit: () => ['pow(_,',')'],
+		  alt: { label: html` <sup>y</sup>√x`, alabel: "Y root of X", sclass: "doinvert", emit: () => ['pow(_,1÷',')'] }
 		},
-		{ label: '0', dclass:"corepad" },
-		{ label: '.', alabel: "point", dclass:"corepad" },
-		{ label: '=', alabel: "equals", dclass:"equals op" },
-		{ label: '+', alabel: "plus", dclass: "op" },
+		{ label: '0', dclass:"corepad", hotkey: '0', emit: () => ['0'] },
+		{ label: '.', alabel: "point", dclass:"corepad", hotkey: '.', emit: () => ['.'] },
+		{ label: '=', alabel: "equals", dclass:"equals op", hotkey: ['=', '\n'], emit: () => ['='] },
+		{ label: '+', alabel: "plus", dclass: "op", hotkey: '+', emit: () => ['+'] },
 	    ]
 	];
     }
@@ -99,14 +118,12 @@ export class CalculatorBase extends connect(store)(PageViewElement) {
 	}
 	const button = (r,c,side) => {
 	    var k = this.keypad[r][c], a = k.alt;
-	    const span = (x) =>
-		  (! x) ? html`` :
-		  (! x.sclass) ? html`<span aria-label$="${x.alabel}" tabindex="0">${x.label}</span>` :
-		  html`<span class$="${x.sclass}" aria-label$="${x.alabel}" tabindex="0">${x.label}</span>` ;
-	    const spans = k && a ? html`${span(k)}${span(a)}` : html`${span(k)}`;
-	    return k.dclass ? 
-		html`<div class$="col ${side} col-${c} ${k.dclass}" id="cell${r}${c}"><div class="in-col">${spans}</div></div>` :
-		html`<div class$="col ${side} col-${c}" id="cell${r}${c}"><div class="in-col">${spans}</div></div>`;
+	    const span = (x,alt) => (! x) ? html`` :
+		  html`<span class$="${x.sclass||''}" aria-label$="${x.alabel}" tabindex="0" on-tap=${e => this._onTap(e,r,c,alt)}>${x.label}</span>` ;
+	    const spans = k && a ? html`${span(k,false)}${span(a,true)}` : html`${span(k,false)}`;
+	    return html`<div class$="col ${side} col-${c} ${k.dclass||''}">
+		          <div class="in-col">${spans}</div>
+		        </div>`;
 	}
 	const lftGenerate = (r) =>  
 	      html`<div class$="row lft row-${r}">${[0,1,2].map(c => button(r,c,'lft'))}</div>`;
@@ -255,12 +272,66 @@ ${computedStyles()}
   </div>
 </section>`;
     }
+    _didRender() {
+	if ( ! this.hotkey) {
+	    // install keyboard accelerators
 
+	    // check event emit strings
+	    const setHotkey = (aij) => {
+		if (aij && aij.hotkey) {
+		    if (typeof(aij.hotkey) === 'string') {
+			this.hotkey[aij.hotkey] = aij;
+		    } else {
+			aij.hotkey.forEach((k) => this.hotkey[k] = aij)
+		    }
+		}
+	    }
+	    const setEmit = (aij, i, j) => {
+		if ( ! aij) return;
+		if (aij.emit) return
+		console.log(`no emit for ${i} ${j}, ${aij.alabel}`)
+	    }
+	    this.hotkey = {}
+	    this.keypad.forEach( (ai, i) => {
+		ai.forEach( (aij, j) => {
+		    setHotkey(aij)
+		    setHotkey(aij.alt);
+		    setEmit(aij, i, j);
+		    setEmit(aij.alt, i, j);
+		});
+	    });
+	    console.log("setHotkey's and checked emits");
+	}
+	// make a map from button spans to the keypad objects
+	if ( ! this.button) {
+	    this.button = {}
+	    this.keypad.forEach( (ai, i) => {
+		ai.forEach( (aij, j) => {
+		    // this.button[`b${i}${j}`] = aij
+		});
+	    });
+	}
+    }
+    
     _stateChanged(state) {
 	this._memo = state.calc.memo;
 	this._text = state.calc.text;
 	this._invert = state.calc.invert;
 	this._aces = state.calc.aces;
+    }
+
+    _onTap(event, row, col, alt) { 
+	const aij = alt ? this.keypad[row][col].alt : this.keypad[row][col];
+	console.log(`_onTap(event, ${row}, ${col}, ${alt})`);
+	switch (event.target.textContent) {
+	case 'Inv': store.dispatch(calcInvert( ! this._invert )); break;
+	case 'Rad': case 'Deg': store.dispatch(calcRadDeg( ! this._raddeg )); break;
+	default: store.dispatch(calcKeypadInput(event.target.textContent)); break;
+	}
+	// console.log(`_onTap( { ${event.target.tagName}, ${event.target.textContent} } )`);
+    }
+    _onPress(event) {
+	store.dispatch(calcKeyboardInput(event.char));
     }
 }
 

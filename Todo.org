@@ -1,3 +1,12 @@
 [ ] implement basic google "calculator"
 [ ] use ganja.js to implement clifford algebras
 [x] make an appropriate icon
+[x] make basic google calculator keypad layout.
+[ ] add drop shadows to basic layout
+[ ] enable key input and test Inv key operation
+[ ] several clevernesses in the model calculator
+	e^x, x^y, pow(x, 1/y),
+	1 - grabs existing x from the accumulator
+	and stuffs it into place in the expression
+	2 - sets y to be a <sup></sup> entry field
+	in the accumulator.
