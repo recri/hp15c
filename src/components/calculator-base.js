@@ -40,130 +40,257 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
     }
 
     // keypad is a list of rows
+    // created left column group first, then right column group to set tab order
+    // some keys have alternate labels/functions
     get keypad() {
-	return [ 		// row 0
-	    [ { label: 'Rad', alabel: "switch from radians to degrees", dclass:"angle rad", emit: () => ['Rad'] },
-	      { label: 'Deg', alabel: "switch from degrees to radians", dclass:"angle deg", emit: () => ['Deg'] },
-	      { label: 'a!', alabel: "factorial", hotkey: '!', emit: () => ['!'] },
-	      { label: '(', alabel: "left parenthesis", dclass: "op", hotkey: '(', emit: () => ['(', ')'] },
-	      { label: ')', alabel: "right parenthesis", dclass: "op", hotkey: ')', emit: () => [')'] },
-	      { label: '%', alabel: "percentage", dclass: "op", hotkey: '%', emit: () => ['%'] },
-	      { label: 'AC', alabel: "all clear", dclass: "erase", sclass: "acesAC", hotkey: '\x7f', emit: () => ['AC'], 
-		alt: { label: 'CE', alabel: "clear entry", sclass: "acesCE", hotkey: '\b', emit: () => ['CE'] }
-	      },
-	    ],[			// row 1
-		{ label: 'Inv', alabel: "inverse", dclass: "inverse", emit: () => ['Inv'] },
-		{ label: 'sin', alabel: "sine", sclass: "uninvert", hotkey: 's', emit: () => ['sin(', ')'],
-		  alt: { label: html`sin<sup>&minus;1</sup>`, alabel: 'arcsine', sclass: "doinvert", hotkey: 'S', emit: () => ['arcsin(', ')'] }
-		},
-		{ label: 'ln', alabel: "natural logarithm", sclass: "uninvert", hotkey: 'l', emit: () => ['ln(', ')'], 
-		  alt: { label: html` e<sup>x</sup>`, alabel: "E to the power of X", sclass: "doinvert", emit: () => ['exp(', ')'] }
-		},
-		{ label: '7', dclass:"corepad", hotkey: '7', emit: () => ['7'] },
-		{ label: '8', dclass:"corepad", hotkey: '8', emit: () => ['8'] },
-		{ label: '9', dclass:"corepad", hotkey: '9', emit: () => ['9'] },
-		{ label: '÷', alabel: "divide", dclass: "op", hotkey: '/', emit: () => ['÷'] },
-	    ], [		// row 2
-		{ label: 'π', alabel: "pi", hotkey: 'p', emit: () => ['π'] },
-		{ label: 'cos', alabel: "cosine", sclass: "uninvert", hotkey: 'c', emit: () => ['cos(', ')'],
-		  alt: { label: html`cos<sup>&minus;1</sup>`, alabel: "arccosine", sclass: "doinvert", hotkey: 'C', emit: () => ['arccos(', ')'] }
-		},
-		{ label: 'log', alabel: "logarithm", sclass: "uninvert", hotkey: 'g', emit: () => ['log(', ')'],
-		  alt: { label: html` 10<sup>x</sup>`, alabel: "ten to the power of X", sclass: "doinvert", emit: () => ['pow(10,', ')'] }
-		},
-		{ label: '4', dclass:"corepad", hotkey: '4', emit: () => ['4'] },
-		{ label: '5', dclass:"corepad", hotkey: '5', emit: () => ['5'] },
-		{ label: '6', dclass:"corepad", hotkey: '6', emit: () => ['6'] },
-		{ label: '×', alabel: "multiply", dclass: "op", hotkey: '*', emit: () => ['×'] },
-	    ], [		// row 3
-		{ label: 'e', alabel: "euler's number", hotkey: 'e', emit: () => ['e'] },
-		{ label: 'tan', alabel: "tangent", sclass: "uninvert", hotkey: 't', emit: () => ['tan(',')'],
-		  alt: { label: html` tan<sup>&minus;1`, alabel: "arctangent", sclass: "doinvert", hotkey: 'T', emit: () => ['arctan(',')'] }
-		},
-		{ label: '√', alabel: "square root", sclass: "uninvert", hotkey: 'r', emit: () => ['√(',')'],
-		  alt: { label: html` x<sup>2</sup>`, alabel: "square", sclass: "doinvert", emit: () => ['pow(_,2)'] }
-		},
-		{ label: '1', dclass:"corepad", hotkey: '1', emit: () => ['1'] },
-		{ label: '2', dclass:"corepad", hotkey: '2', emit: () => ['2'] },
-		{ label: '3', dclass:"corepad", hotkey: '3', emit: () => ['3'] },
-		{ label: '-', alabel: "minus", dclass: "op", hotkey: '-', emit: () => ['-'] },
-	    ], [		// row 4
-		{ label: 'Ans', alabel: "answer", sclass: "uninvert", hotkey: ['a', 'A'], emit: () => ['Ans'],
-		  alt: { label: 'Rnd', alabel: "random", sclass: "doinvert", hotkey: 'R', emit: () => [Math.random()] }
-		},
-		{ label: 'EXP', alabel: "exponential", hotkey: 'E', emit: () => ['E'] },
-		{ label: html`x<sup>y</sup>`, alabel: "X to the power of Y", sclass: "uninvert", emit: () => ['pow(_,',')'],
-		  alt: { label: html` <sup>y</sup>√x`, alabel: "Y root of X", sclass: "doinvert", emit: () => ['pow(_,1÷',')'] }
-		},
-		{ label: '0', dclass:"corepad", hotkey: '0', emit: () => ['0'] },
-		{ label: '.', alabel: "point", dclass:"corepad", hotkey: '.', emit: () => ['.'] },
-		{ label: '=', alabel: "equals", dclass:"equals op", hotkey: ['=', '\n'], emit: () => ['='] },
-		{ label: '+', alabel: "plus", dclass: "op", hotkey: '+', emit: () => ['+'] },
-	    ]
-	];
+	// full key definition
+	const key = (label, alabel, sclass, hotkey, emit, alt) => {
+	    var key = { label: label };		// key label
+	    if (alabel) key.alabel = alabel;	// aria-label
+	    if (sclass) key.sclass = sclass;	// class at span level
+	    if (hotkey) key.hotkey = hotkey;	// keyboard accelerators
+	    // text emitted, either text before insertion point
+	    // or a list of two elements before and after insertion point
+	    if (emit) key.emit = (typeof(emit) === 'string') ? [emit] : emit ;
+	    if (alt) key.alt = alt;		// the alternate key definition under invert shift
+	    return key;
+	}
+	// core keypad key definition
+	const corepad = (label, alabel) =>
+	      key(label, alabel, 'corepad', label, label);
+	const keypad = 
+	      [ [ // row 0
+ 		  key('Rad', "switch from radians to degrees", "angle rad", null, 'Rad'),
+		  key('Deg', "switch from degrees to radians", "angle deg", null, 'Deg'),
+		  key('a!', "factorial", null, '!', '!'),
+		  key('(', "left parenthesis", "op", '(', ['(', ')']),
+		  key(')', "right parenthesis", "op", ')', ')'),
+		  key('%', "percentage", "op", '%', '%'),
+		  key('AC',"all clear", "erase acesAC", '\x7f', 'AC', 
+		      key('CE', "clear entry",  "erase acesCE", '\b', 'CE'))
+	      ],[ // row 1
+		  key('Inv', "inverse", "inverse", null, 'Inv'),
+		  key('sin', "sine", "uninvert", 's', ['sin(', ')'],
+		      key(html`sin<sup>&minus;1</sup>`, 'arcsine', "doinvert", 'S', ['arcsin(', ')'])),
+		  key('ln', "natural logarithm", "uninvert", 'l', ['ln(', ')'], 
+		      key(html` e<sup>x</sup>`, "E to the power of X", "doinvert", null, ['exp(', ')'])),
+		  corepad('7'),
+		  corepad('8'),
+		  corepad('9'),
+		  key('÷', "divide", "op", '/', '÷'),
+	      ], [ // row 2
+		  key('π', "pi", null, 'p', 'π'),
+		  key('cos', "cosine", "uninvert", 'c', ['cos(', ')'],
+		      key(html`cos<sup>&minus;1</sup>`, "arccosine", "doinvert", 'C', ['arccos(', ')'] )),
+		  key('log', "logarithm", "uninvert", 'g', ['log(', ')'],
+		      key( html` 10<sup>x</sup>`, "ten to the power of X", "doinvert", null, ['pow(10,', ')'])),
+		  corepad('4'),
+		  corepad('5'),
+		  corepad('6'),
+		  key('×', "multiply", "op", '*', '×'),
+	      ], [ // row 3
+		  key('e', "euler's number", null, 'e', 'e'),
+		  key('tan', "tangent", "uninvert", 't', ['tan(',')'],
+		      key( html` tan<sup>&minus;1`, "arctangent", "doinvert", 'T', ['arctan(',')'])),
+		  key('√', "square root", "uninvert", 'r', ['√(',')'],
+		      key( html` x<sup>2</sup>`, "square", "doinvert", null, ['pow(_,2)'])),
+		  corepad('1'),
+		  corepad('2'),
+		  corepad('3'),
+		  key('-', "minus", "op", '-', '-'),
+	      ], [		// row 4
+		  key('Ans', "answer", "uninvert", ['a', 'A'], 'Ans',
+		      key('Rnd', "random", "doinvert", 'R', 'Rnd' )),
+		  key('EXP', "exponential", null, 'E', 'E'),
+		  key( html`x<sup>y</sup>`, "X to the power of Y", "uninvert", null, ['pow(_,',')'],
+		       key( html` <sup>y</sup>√x`, "Y root of X", "doinvert", null, ['pow(_,1÷',')'])),
+		  corepad('0'),
+		  corepad('.', "point"),
+		  key('=', "equals", "equals op", ['=', 'Enter'], '='),
+		  key('+', "plus", "op", '+', '+'),
+	      ] ];
+	return keypad;
     }
     
     _render({_memo, _text, _invert, _aces}) {
-	const computedStyles = () => {
-	    var style = html``;
-	    if (_invert)
-		style = html`${style}<style>:host { --span-uninvert-display: none; --span-doinvert-display:table-cell; --div-invert-background:lightgrey;}</style>`;
-	    else
-		style = html`${style}<style>:host { --span-uninvert-display:table-cell; --span-doinvert-display:none; --div-invert-background:darkgrey;}</style>`;
-	    if (_aces)
-		style = html`${style}<style>:host { --span-acesAC-display:none; --span-acesCE-display:table-cell;}</style>`;
-	    else
-		style = html`${style}<style>:host { --span-acesAC-display:table-cell;--span-acesCE-display:none;}</style>`;
-	    return style;
-	}
-	const button = (r,c,side) => {
-	    var k = this.keypad[r][c], a = k.alt;
-	    const span = (x,alt) => (! x) ? html`` :
-		  html`<span class$="${x.sclass||''}" aria-label$="${x.alabel}" tabindex="0" on-tap=${e => this._onTap(e,r,c,alt)}>${x.label}</span>` ;
-	    const spans = k && a ? html`${span(k,false)}${span(a,true)}` : html`${span(k,false)}`;
-	    return html`<div class$="col ${side} col-${c} ${k.dclass||''}">
-		          <div class="in-col">${spans}</div>
-		        </div>`;
-	}
+	const computedStyleInvert =  _invert ?
+	      html`<style>:host {--uninvert-display:none;--doinvert-display:table-cell;--invert-background:lightgrey;}</style>` :
+	      html`<style>:host {--uninvert-display:table-cell;--doinvert-display:none;--invert-background:darkgrey;}</style>` ;
+	const computedStyleAces = _aces ?
+	      html`<style>:host { --acesAC-display:none; --acesCE-display:table-cell;}</style>` :
+	      html`<style>:host { --acesAC-display:table-cell;--acesCE-display:none;}</style>` ;
+	const computedStyles =
+	      html`${computedStyleInvert}${computedStyleAces}`;
+	const span = (x) => (! x) ? html`` :
+	      html`<span class$="${x.sclass||''}" aria-label$="${x.alabel || ''}" tabindex="0" on-tap=${e => this._onTap(e,x)}>${x.label}</span>`;
+	const button = (r,c,side,k) => 
+	      html`<div class$="col ${side} col-${c}"><div class="in-col">${span(k)}${span(k.alt)}</div></div>`;
 	const lftGenerate = (r) =>  
-	      html`<div class$="row lft row-${r}">${[0,1,2].map(c => button(r,c,'lft'))}</div>`;
+	      html`<div class$="row lft row-${r}">${[0,1,2].map(c => button(r,c,'lft',this.keypad[r][c]))}</div>`;
 	const rgtGenerate = (r) => 
-	      html`<div class$="row rgt row-${r}">${[3,4,5,6].map(c => button(r,c,'rgt'))}</div>`;
+	      html`<div class$="row rgt row-${r}">${[3,4,5,6].map(c => button(r,c,'rgt',this.keypad[r][c]))}</div>`;
 	return html`
 ${SharedStyles}
-${computedStyles()}
+${computedStyles}
 <style>
   :host {
-    --div-darker-background: #d6d6d6;
-    --div-darker-color: #444;
-    --div-darker-border: 1px solid #c6c6c6;
-    --div-lighter-background: #f5f5f5;
-    --div-lighter-color: #444;
-    --div-lighter-border: 1px solid #dedede;
-    --div-highlight-background: #4d90fe;
-    --div-highlight-color: #fefefe;
-    --div-highlight-border: 1px solid #2f5bb7;
-    --div-highlight-font-weight: bold;
+    --darker-background: #d6d6d6;
+    --darker-color: #444;
+    --darker-border: 1px solid #c6c6c6;
+    --lighter-background: #f5f5f5;
+    --lighter-color: #444;
+    --lighter-border: 1px solid #dedede;
+    --highlight-background: #4d90fe;
+    --highlight-color: #fefefe;
+    --highlight-border: 1px solid #2f5bb7;
+    --highlight-font-weight: bold;
   }
-  div.frame { 
+  /* enclosing frame */
+  div.frm { /* data-hveid="40" */
     width:600px;
     height:354px;
     position: relative;
   }
-  div.mem {
-    width:100%;
+  div.frm1 { /* .vk_c ... */
+    padding: 20px 16px 24px 16px;
+    margin-left: -16px;
+    margin-right: -16px;
+    margin-left: -8px;		/* ??? */
+    margin-right: -35px;	/* ??? which margins */
+    min-height:72px;
+    line-height:1;
+    background-color: #fff;
+    position: relative;
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08);
+  }
+  div.frm11 { /* .cwmd */
+    -moz-user-select: -moz-none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    height: 310px;
+    position: relative;
+  }
+  div.frm111 { /* .cwed */
+    width: 100%;
+    height: 100%;
+    direction: ltr;
+  }
+  /* memo bar */
+  div.mem { /* .cwled */
+    width: 100%;
     height: 6%;
     display: block;
     position: relative;
-    text-align:right;
-  }    
-  div.txt {
+  }
+  div#mem1i { /* #cwfleb */
+    width: 100%;
+    height: 200%;
+    position: absolute;
+    top: -50%;
+    z-index: 2;
+  }
+  div.mem2 { /* .cwletbl
+    transition: height .2s,font-size .2s,color .2s;
+    -moz-transition: height .2s,font-size .2s,color .2s;
+    -o-transition: height .2s,font-size .2s,color .2s;
+    -webkit-transition: height .2s,font-size .2s,color .2s;
+    color: #757575;
+    display: table;
+    font-size: 13px;
+    height: 100%;
+    left: 1%;
+    overflow: hidden;
+    position: absolute;
+    table-layout: fixed;
+    width: 98%;
+  }
+  div.mem2i { /* #cwletbl */
+  }
+  div.mem21 { /* .cwleotc */
+  }
+  span.mem211 { /* .cwclet */
+  }
+  span#mem211i { /* #cwles */
+  }
+
+  /* text entry */
+  div.txt { /* .cwtld */
     width: 100%;
     height: 21%;
     display: block;
     position: relative;
-    text-align:right;
   }
+  div.txt1 { /* .cwtlb */
+    -moz-border-radius: 1.1px;
+    -webkit-border-radius: 1.1px;
+    border-radius: 1.1px;
+    background-color: none;
+    border: 1px solid #d9d9d9;
+    border-top: 1px solid #c0c0c0;
+    color: #333;
+    height: 75%;
+    left: 1%;
+    position: absolute;
+    top: 12.5%;
+    width: 98%;
+  }
+  div#txt1i { /* #cwtlbb */
+  }
+  div.txt2 { /* .cwtlwm */
+    background-color: white;
+    border: none;
+    height: 100%;
+    margin-top: 3px;
+    position: absolute;
+    top: 88%;
+    width: 100%;
+    z-index: 1;
+  }
+  div.txt3 { /* .cwtltbl */
+    transition: height .2s;
+    -moz-transition: height .2s;
+    -o-transition: height .2s;
+    -webkit-transition: height .2s;
+    color: #222;
+    display: table;
+    font-size: 30px;
+    height: 100%;
+    position: absolute;
+    table-layout: fixed;
+    width: 100%;
+    z-index: 0;
+  }
+  div#txt3i { /* #cwotbl */
+  }
+  div#txt31i { /* #cwtltblr */
+    display: table-row;
+  }
+  div.txt311 { /* .cwtlptc */
+    display: table-cell;
+    vertical-align: middle;
+    width: 2.5%;
+  }
+  div.txt312 { /* .cwtlotc */
+    display: table-cell;
+    overflow: hidden;
+    padding-right: 2%;
+    vertical-align: middle;
+    width: 95%;
+  }
+  span.txt3121 { /* .cwcot */
+    -moz-user-select: text;
+    -webkit-user-select: text;
+    -ms-user-select: text;
+    float: right;
+    /* font-family: Roboto-Regular,helvetica,arial,sans-serif; */
+    font-weight: lighter;
+    white-space: nowrap;
+  }
+  span#txt3121i { /* #cwos */
+  }
+
   /* keypad */
   div.kpd { 
     bottom: 0;
@@ -202,8 +329,6 @@ ${computedStyles()}
   }
   div.lft.col { width:33.3%; }
   div.rgt.col { width:25.0%; }
-  div.col.op { font-size: 20px; }
-  div.col.angle, div.col.erase { font-size: 11px; }
   /* inner column */
   div.in-col { 
     width: 88%;
@@ -233,32 +358,78 @@ ${computedStyles()}
   div.col-5 { left:50%; }
   div.col-6 { left:75%; }
   /* last chance to override */
-  div.in-col span.uninvert { display: var(--span-uninvert-display); }
-  div.in-col span.doinvert { display: var(--span-doinvert-display); }
-  div.invert div.in-col { background: var(--div-invert-background); }
-  div.in-col span.acesAC { display: var(--span-acesAC-display); }
-  div.in-col span.acesCE { display: var(--span-acesCE-display); }
+  span.op { font-size: 20px; }
+  span.angle, span.erase { font-size: 11px; }
+  div.in-col span.uninvert { display: var(--uninvert-display); }
+  div.in-col span.doinvert { display: var(--doinvert-display); }
+  div.in-col span.invert { background-color: var(--invert-background); }
+  div.in-col span.acesAC { display: var(--acesAC-display); }
+  div.in-col span.acesCE { display: var(--acesCE-display); }
   div.col div.in-col { 
-    background-color: var(--div-darker-background);
-    color: var(--div-darker-color);
+    background-color: var(--darker-background);
+    color: var(--darker-color);
     font-size: 15px;
  }
-  div.col.corepad div.in-col {
-    background-color: var(--div-lighter-background);
-    color: var(--span-lighter-color);
-    border: var(--span-lighter-border);
+  div.col div.in-col span.corepad {
+    background-color: var(--lighter-background);
+    color: var(--lighter-color);
+    border: var(--lighter-border);
   }
-  div.col.equals div.in-col { 
-    background-color: var(--div-highlight-background);
-    color: var(--div-highlight-color);
-    border: var(--div-highlight-border);
-    font-weight: var(--div-hightlight-font-weight);
+  div.col div.in-col span.equals { 
+    background-color: var(--highlight-background);
+    color: var(--highlight-color);
+    border: var(--highlight-border);
+    font-weight: var(--hightlight-font-weight);
   }
 </style>
-<section>
-  <div class="frame">
-    <div class="mem"><span class="mems">${_memo}</span></div>
-    <div class="txt"><span class="txts">${_text}</span></div>
+<section on-keypress=${e => this._onPress(e)}>
+  <div class="frm">			<!-- data-hveid="40" -->
+    <div class="frm1" id="frm1i">	<!-- .vk_c .card-section, #cwmcwd -->
+      <div class="frm11">		<!-- .cwmd -->
+	<div class="frm111">		<!-- .cwed -->
+
+    <!-- memo bar -->
+    <div class="mem">				<!-- .cwled -->
+      <div id="mem1i"></div>			<!-- #cwfleb -->
+      <div class="mem2" id="mem2i">		<!-- .cwletbl, #cwletbl -->
+	<div class="mem21">			<!-- .cwleotc -->
+	  <span class="mem211" id="mem211i"> ${_memo} </span>	<!-- .cwclet, #cwles -->
+	</div>
+      </div>
+    </div>
+
+    <!-- expression accumulator -->
+    <div class="txt">				<!-- .cwtld -->
+      <div class="txt1" id="txt1i"></div>	<!-- .cwtlb, #cwtlbb -->
+      <div class="txt2"></div>			<!-- .cwtlwm -->
+      <div class="txt3" id="txt3i">		<!-- .cwtltbl, #cwotbl -->
+	<div aria-level="3" id="txt31i" role="heading" tabindex="0"> <!-- #cwtltblr -->
+	  <div class="txt311"></div>		<!-- .cwtlptc -->
+	  <div class="txt312">			<!-- .cwtlotc -->
+	    <span class="txt3121" id="txt3121i">   ${_text}  </span>  <!-- .cwcot, #cwos -->
+	    <script nonce="PS98yzrAeH4PLyc5tzKlHA==">
+(function(){
+    console.log("nonce called");
+    var a=document.getElementById("txt331i"),b; /* refers to span above by id */
+    var c=parseFloat(a.innerText||a.textContent),d=c.toString();
+    if(12>=d.replace(/^-/,"").replace(/\./,"").length)
+	b=d;
+    else if(d=c.toPrecision(12),-1!=d.indexOf("e")) {
+	var e=d.match(/e.*$/)[0].length;
+	b=c.toPrecision(12-e-("0"==d[0]?1:0)).replace(/\.?0*e/,"e")
+    } else {
+	var f=d.match(/(^-|\.)/g),g=d.substr(0,12+(f?f.length:0));
+	b=-1!=g.indexOf(".")?g.replace(/\.?0*$/,""):g
+    }
+    a.innerHTML=b;
+}).call(this);
+	    </script>
+	  </div>
+	  <div class="txt311"></div>		<!-- .cwtlptc -->
+	</div>
+      </div>
+    </div>
+
     <div class="wrp">
       <div class="kpd">
         <div class="lft side">
@@ -267,6 +438,10 @@ ${computedStyles()}
         <div class="rgt side">
           ${[0,1,2,3,4].map(r => rgtGenerate(r))}
         </div>
+      </div>
+    </div>
+
+	</div>
       </div>
     </div>
   </div>
@@ -286,21 +461,13 @@ ${computedStyles()}
 		    }
 		}
 	    }
-	    const setEmit = (aij, i, j) => {
-		if ( ! aij) return;
-		if (aij.emit) return
-		console.log(`no emit for ${i} ${j}, ${aij.alabel}`)
-	    }
 	    this.hotkey = {}
 	    this.keypad.forEach( (ai, i) => {
 		ai.forEach( (aij, j) => {
 		    setHotkey(aij)
 		    setHotkey(aij.alt);
-		    setEmit(aij, i, j);
-		    setEmit(aij.alt, i, j);
 		});
 	    });
-	    console.log("setHotkey's and checked emits");
 	}
 	// make a map from button spans to the keypad objects
 	if ( ! this.button) {
@@ -320,18 +487,23 @@ ${computedStyles()}
 	this._aces = state.calc.aces;
     }
 
-    _onTap(event, row, col, alt) { 
-	const aij = alt ? this.keypad[row][col].alt : this.keypad[row][col];
-	console.log(`_onTap(event, ${row}, ${col}, ${alt})`);
+    _onTap(event, aij) { 
+	console.log(`_onTap(${aij.emit})`);
 	switch (event.target.textContent) {
 	case 'Inv': store.dispatch(calcInvert( ! this._invert )); break;
 	case 'Rad': case 'Deg': store.dispatch(calcRadDeg( ! this._raddeg )); break;
 	default: store.dispatch(calcKeypadInput(event.target.textContent)); break;
 	}
-	// console.log(`_onTap( { ${event.target.tagName}, ${event.target.textContent} } )`);
     }
     _onPress(event) {
-	store.dispatch(calcKeyboardInput(event.char));
+	// okay, this will require Enter instead of \n
+	// console.log(`onPress(${event.type}, ${event.target}), ${event.charCode}, ${event.key})`);
+	const aij = this.hotkey[event.key];
+	console.log(`_onPress(${event.key} -> ${aij})`);
+	if (aij) {
+	    console.log(`_onPress(${aij.emit})`);
+	    store.dispatch(calcKeyboardInput(aij.emit));
+	}
     }
 }
 

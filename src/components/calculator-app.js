@@ -165,13 +165,13 @@ class CalculatorApp extends connect(store)(LitElement) {
         color: var(--app-drawer-text-color);
       }
 
-     /* Wide layout */
-     @media (min-width: 768px) {
-       app-header,
-       .main-content,
-       footer {
-         margin-left: var(--app-drawer-width);
-      }
+      /* Wide layout */
+      @media (min-width: 768px) {
+        app-header,
+        .main-content,
+        footer {
+          margin-left: var(--app-drawer-width);
+        }
 
         .menu-btn {
           display: none;
@@ -196,20 +196,17 @@ class CalculatorApp extends connect(store)(LitElement) {
     <app-drawer opened="${_drawerOpened}" persistent="${_wideLayout}"
         on-opened-changed="${e => store.dispatch(updateDrawerState(e.target.opened))}">
       <nav class="drawer-list">
-        <a selected?="${_page === 'e2'}" href="/" title="Calculator with 2D geometry.">E2</a>
-        <a selected?="${_page === 'e3'}" href="/e3" title="Calculator with 3D geometry.">E3</a>
-        <a selected?="${_page === 'settings'}" href="/settings" title="Change the settings.">Settings</a>
-        <a selected?="${_page === 'about'}" href="/about" title="About the app.">About</a>
-        <a selected?="${_page === 'tests'}" href="/tests" title="Test the app.">Tests</a>
+	<a selected?="${_page === 'base'}" href="/" title="Calculator">Calculator</a>
+	<a selected?="${_page === 'settings'}" href="/settings" title="Change the settings.">Settings</a>
+	<a selected?="${_page === 'about'}" href="/about" title="About the app.">About</a>
+	<a selected?="${_page === 'tests'}" href="/tests" title="Test the app.">Tests</a>
 	${installPrompt}
       </nav>
     </app-drawer>
 
     <!-- Main content -->
     <main class="main-content">
-      <calculator-base class="page" active?="${_page === 'base'}"></calculator-e2>
-      <calculator-e2 class="page" active?="${_page === 'e2'}"></calculator-e2>
-      <calculator-e3 class="page" active?="${_page === 'e3'}"></calculator-e3>
+      <calculator-base class="page" active?="${_page === 'base'}"></calculator-base>
       <calculator-settings class="page" active?="${_page === 'settings'}"></calculator-settings>
       <calculator-about class="page" active?="${_page === 'about'}"></calculator-about>
       <calculator-tests class="page" active?="${_page === 'tests'}"></calculator-tests>
@@ -253,10 +250,8 @@ class CalculatorApp extends connect(store)(LitElement) {
     }
 
     _installPrompt(_install) {
-	// clear the prompt
-	installPrompt(null);
-	// Show the prompt
-	_install.prompt()
+	installPrompt(null);	// clear the prompt
+	_install.prompt();	// Show the prompt
     }
 }
 
