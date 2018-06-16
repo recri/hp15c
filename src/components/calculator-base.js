@@ -11,7 +11,7 @@ import { SharedStyles } from './shared-styles.js';
 
 import { connect } from 'pwa-helpers/connect-mixin.js';
 import { store } from '../store.js';
-import { calcInvert, calcACES, calcRadDeg, calcKeypadInput, calcKeyboardInput } from '../actions/calc.js';
+import { calcInvert, calcACES, calcRadDeg, calcInput, calcParse, calcEcho, calcAC, calcCE } from '../actions/calc.js';
 
 const _ignore = (e) => false;
 
@@ -66,14 +66,14 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
 		  key('(', "left parenthesis", "op", '(', ['(', ')']),
 		  key(')', "right parenthesis", "op", ')', ')'),
 		  key('%', "percentage", "op", '%', '%'),
-		  key('AC',"all clear", "erase acesAC", '\x7f', 'AC', 
-		      key('CE', "clear entry",  "erase acesCE", '\b', 'CE'))
+		  key('AC',"all clear", "erase acesAC", 'Delete', 'AC',
+		      key('CE', "clear entry",  "erase acesCE", 'Backspace', 'CE'))
 	      ],[ // row 1
 		  key('Inv', "inverse", "inverse", null, 'Inv'),
 		  key('sin', "sine", "uninvert", 's', ['sin(', ')'],
 		      key(html`sin<sup>&minus;1</sup>`, 'arcsine', "doinvert", 'S', ['arcsin(', ')'])),
 		  key('ln', "natural logarithm", "uninvert", 'l', ['ln(', ')'], 
-		      key(html` e<sup>x</sup>`, "E to the power of X", "doinvert", null, ['exp(', ')'])),
+		      key(html` e<sup>x</sup>`, "e to the power of X", "doinvert", null, ['exp(', ')'])),
 		  corepad('7'),
 		  corepad('8'),
 		  corepad('9'),
@@ -102,7 +102,7 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
 		  key('Ans', "answer", "uninvert", ['a', 'A'], 'Ans',
 		      key('Rnd', "random", "doinvert", 'R', 'Rnd' )),
 		  key('EXP', "exponential", null, 'E', 'E'),
-		  key( html`x<sup>y</sup>`, "X to the power of Y", "uninvert", null, ['pow(_,',')'],
+		  key( html`x<sup>y</sup>`, "X to the power of Y", "uninvert", '^', ['pow(_,',')'],
 		       key( html` <sup>y</sup>√x`, "Y root of X", "doinvert", null, ['pow(_,1÷',')'])),
 		  corepad('0'),
 		  corepad('.', "point"),
@@ -382,7 +382,7 @@ ${computedStyles}
     font-weight: var(--hightlight-font-weight);
   }
 </style>
-<section on-keypress=${e => this._onPress(e)}>
+<section on-keydown=${e => this._onDown(e)}>
   <div class="frm">			<!-- data-hveid="40" -->
     <div class="frm1" id="frm1i">	<!-- .vk_c .card-section, #cwmcwd -->
       <div class="frm11">		<!-- .cwmd -->
@@ -407,10 +407,10 @@ ${computedStyles}
 	  <div class="txt311"></div>		<!-- .cwtlptc -->
 	  <div class="txt312">			<!-- .cwtlotc -->
 	    <span class="txt3121" id="txt3121i">   ${_text}  </span>  <!-- .cwcot, #cwos -->
-	    <script nonce="PS98yzrAeH4PLyc5tzKlHA==">
+	    <script>
 (function(){
-    console.log("nonce called");
-    var a=document.getElementById("txt331i"),b; /* refers to span above by id */
+    console.log("nonce-less nonce called");
+    var a=this._shadowRoot.getElementById("txt331i"),b; /* refers to span above by id */
     var c=parseFloat(a.innerText||a.textContent),d=c.toString();
     if(12>=d.replace(/^-/,"").replace(/\./,"").length)
 	b=d;
@@ -488,23 +488,38 @@ ${computedStyles}
     }
 
     _onTap(event, aij) { 
-	console.log(`_onTap(${aij.emit})`);
-	switch (event.target.textContent) {
-	case 'Inv': store.dispatch(calcInvert( ! this._invert )); break;
-	case 'Rad': case 'Deg': store.dispatch(calcRadDeg( ! this._raddeg )); break;
-	default: store.dispatch(calcKeypadInput(event.target.textContent)); break;
+	if (aij) this._onEmit(aij.emit);
+    }
+    _onDown(event) {
+	if (event.key.length !== 1) console.log(`_onPress('${event.key}')`);
+	if (this.hotkey[event.key]) this._onEmit(this.hotkey[event.key].emit);
+    }
+
+    _onEmit(emit) {
+	console.log(`_onEmit('${emit}')`);
+	switch (emit[0]) {
+	case 'Inv':
+	    store.dispatch(calcInvert( ! this._invert )); 
+	    break;
+	case 'Rad': case 'Deg':
+	    store.dispatch(calcRadDeg( ! this._raddeg ));
+	    break;
+	case 'CE':
+	    store.dispatch(calcCE());
+	    break;
+	case 'AC':
+	    store.dispatch(calcAC());
+	    break;
+	default:
+	    store.dispatch(calcInput(emit));
+	    // cancel invert after any key
+	    if (this._invert) store.dispatch(calcInvert( ! this._invert ))
+	    store.dispatch(calcParse());
+	    store.dispatch(calcEcho());
+	    break;
 	}
     }
-    _onPress(event) {
-	// okay, this will require Enter instead of \n
-	// console.log(`onPress(${event.type}, ${event.target}), ${event.charCode}, ${event.key})`);
-	const aij = this.hotkey[event.key];
-	console.log(`_onPress(${event.key} -> ${aij})`);
-	if (aij) {
-	    console.log(`_onPress(${aij.emit})`);
-	    store.dispatch(calcKeyboardInput(aij.emit));
-	}
-    }
+
 }
 
 window.customElements.define('calculator-base', CalculatorBase);
