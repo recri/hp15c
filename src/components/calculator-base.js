@@ -211,7 +211,7 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
 
     _render({_memo, _text, _future, _invert}) {
 	const computedStyleInvert =  _invert ?
-	      html`<style>:host {--uninvert-display:none;--doinvert-display:table-cell;--invert-background:lightgrey;}</style>` :
+	      html`<style>:host {--uninvert-display:none;--doinvert-display:table-cell;--invert-background:white;}</style>` :
 	      html`<style>:host {--uninvert-display:table-cell;--doinvert-display:none;--invert-background:darkgrey;}</style>` ;
 	const computedStyleAces = _text !== '0'  ?
 	      html`<style>:host { --acesAC-display:none;--acesCE-display:table-cell;}</style>` :
@@ -510,7 +510,7 @@ ${computedStyles}
 	<div aria-level="3" id="txt31i" role="heading" tabindex="0"> <!-- #cwtltblr -->
 	  <div class="txt311"></div>		<!-- .cwtlptc -->
 	  <div class="txt312">			<!-- .cwtlotc -->
-	    <span class="txt3121" id="txt3121i" on-focus=${e => this._onFocus(e)}>
+	    <span class="txt3121" id="txt3121i">
 	      ${_text}  <span class="txt31211"> ${_future}</span>
 	    </span>  <!-- .cwcot, #cwos -->
 	    <script>
@@ -555,6 +555,10 @@ ${computedStyles}
     }
 
     _didRender() {
+	if ( ! this.focused) {
+	    this.shadowRoot.getElementById('txt31i').focus();
+	    this.focused = true;
+	}
     }
     
     _onTap(event, aij) { 
