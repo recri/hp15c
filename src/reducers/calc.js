@@ -5,7 +5,7 @@ This code may only be used under the BSD style license found at http://recri.git
 */
 
 import { 
-    CALC_INVERT, CALC_ACES, CALC_RADDEG, CALC_INPUT, CALC_PARSE, CALC_ECHO, CALC_AC, CALC_CE
+    CALC_INVERT, CALC_RADDEG, CALC_INPUT, CALC_AC, CALC_CE, CALC_EVAL
  } from '../actions/calc.js';
 
 import { store } from '../store.js';
@@ -15,45 +15,36 @@ const calc = (state = {
     text: '0',
     future: '',
     invert: false,
-    aces: false,
     raddeg: false,
-    input: null,
-    parseText: null,
-    parseFuture: null,
     history: []
 }, action) => {
     switch (action.type) {
-    case CALC_INVERT: return { ...state, invert: action.invert };
-    case CALC_ACES: return { ...state, aces: action.aces };
-    case CALC_RADDEG: return {...state, raddeg: action.raddeg };
-    case CALC_INPUT: return {...state, input: action.key };
-    case CALC_PARSE: return {...state, 
-			     parseText: state.input[0],
-			     parseFuture: state.input[1]||'',
-			     input: null
-			    };
-    case CALC_ECHO: 
-	// if the only thing in the accumulator is the default '0',
-	// then treat it as an optional input
-	// caution, mutating history in place
-	state.history.push([state.text, state.future]);
-	return {...state,
-		text: state.text+state.parseText,
-		future: state.parseFuture+state.future,
-		parseText: null, 
-		parseFuture: null
-	       };
-	//
-    case CALC_AC: return {...state, text: '0', future: '', history: []};
+    case CALC_INVERT: return { ...state, invert: ! state.invert };
+    case CALC_RADDEG: return {...state, raddeg: ! state.raddeg };
+    case CALC_INPUT:
+	if (action.key) {
+	    const [text, future] = action.key;
+	    state.history.push([state.text, state.future]); // caution
+	    return { ...state, text: text, future: future };
+	} else
+	    return state;
+    case CALC_AC:
+	return { ...state, text: '0', future: '', history: [], invert: false
+	};
     case CALC_CE: 
-	// if we remove everything, then the default 0 should come back
-	// caution, mutating history in place
 	if (state.history.length) {
-	    const [text, future] = state.history.pop()
-	    return {...state, text: text, future: future};
-	}
+	    const [text, future] = state.history.pop(); // caution
+ 	    return { ...state, text: text, future: future };
+	} else
+	    return state;
+    case CALC_EVAL:
+	// compute the expression, 
+	// return result in accumulator
+	// note computation and result in memo
+	console.log(`eval ${state.text}`);
 	return state;
-    default: return state;
+    default:
+	return state;
     }
 }
 

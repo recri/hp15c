@@ -11,7 +11,7 @@ import { SharedStyles } from './shared-styles.js';
 
 import { connect } from 'pwa-helpers/connect-mixin.js';
 import { store } from '../store.js';
-import { calcInvert, calcACES, calcRadDeg, calcInput, calcParse, calcEcho, calcAC, calcCE } from '../actions/calc.js';
+import { calcInvert, calcRadDeg, calcInput, calcAC, calcCE, calcEval } from '../actions/calc.js';
 
 const _ignore = (e) => false;
 
@@ -22,6 +22,8 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
 	Gestures.addListener(this, 'tap', _ignore);
 	Gestures.addListener(this, 'down', _ignore);
 	Gestures.addListener(this, 'up', _ignore);
+	this.keypad = this.keypadInit();
+	this.hotkey = this.hotkeyInit();
     }
     disconnectedCallback() {
 	super.disconnectedCallback();
@@ -33,91 +35,186 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
 	return {
 	    _memo: String,	// Memo text displayed
 	    _text: String,	// Text entered 
+	    _future: String,	// Closing paren's deferred
 	    _invert: Boolean,	// Show normal or inverted labels
-	    _aces: Boolean,	// Show AC or CE button label
 	    _raddeg: Boolean,	// Use Rad or Deg for angle
+	    _history: Array,	// History of input for the current expression
 	}
     }
 
-    // keypad is a list of rows
-    // created left column group first, then right column group to set tab order
+    _stateChanged(state) {
+	this._history = state.calc.history;
+	this._memo = state.calc.memo;
+	this._text = state.calc.text;
+	this._future = state.calc.future;
+	this._invert = state.calc.invert;
+    }
+
+    // Keypad is a list of rows, 
+    // each of which is a list of cells,
+    // each of which is a stack of zero or more key definitions.
+    // These are created left column group first, 
+    // then right column group 
+    // to set the tab order
     // some keys have alternate labels/functions
-    get keypad() {
+    // we overload the table with additional lexical analysis 
+    // and syntactical parse information
+    keypadInit() {
+	// operators with funky unicode
+	const multiply = '×';
+	const divide = '÷';
+
+	// parsing helpers
+	const dropZeroOrMultiply = (text) =>
+	      text === '0' ? '' : `${text} ${multiply} `;
+	// uh, canAddDigit, canAddRadix, canAddExponent, splitTextIntoLHSAndTheRest
+	// parsing function generators
+	const parseRadDeg = (op) => (text, future) => {
+	    store.dispatch(calcRadDeg());
+	    return null;
+	}
+	const parsePostfix = (op) => (text, future) =>
+	      [ `${text}${op}`, future ];
+	const parseLparen = (op) => (text, future) =>
+	      [ `${dropZeroOrMultiply(text)}(`, `)${future}` ] ;
+	const parseRparen = (op) => (text, future) =>
+	      future.length && future.charAt(0) === ')' ? [ `${text})`, future.slice(1) ] : null ;
+	const parseInfix = (op) => (text, future) =>
+	      [ `${text} ${op} `, future ];
+	const parseAC = (op) => (text, future) => {
+	    store.dispatch(calcAC());
+	    return null;
+	}
+	const parseCE = () => (text, future) => {
+	    store.dispatch(calcCE());
+	    return null;
+	}
+	const parseInv = (op) => (text, future) => {
+	    store.dispatch(calcInvert());
+	    return null;
+	}
+	const parsePrefix = (op) => (text, future) =>
+	      [ `${dropZeroOrMultiply(text)}${op}(`, `)${future}` ];
+	const parsePrefix2 = (op, fut) => (text, future) =>
+	      [ `${dropZeroOrMultiply(text)}${op}`, `${fut}${future}` ];
+	const parseDigit = (op) => (text, future) =>
+	      text === '0' ?
+	      [ op, future ] : [ `${text}${op}`, future ] ;
+	const parseRadix = (op) => (text, future) =>
+	      [ `${text}${op}`, future ];
+	const parseConstant = (op) => (text, future) =>
+	      [ `${dropZeroOrMultiply(text)}${op}`, future ];
+	const parseGrabLHS = (op) => (text, future) =>
+	      [ `${op.replace(/_/, text)}`, future ] ; // sort of bogus
+        const parseGrabLHS2 = (op, fut) => (text, future) =>
+	      [ `${op.replace(/_/, text)}`, `${fut}${future}` ];
+	const parseAns = (op) => (text, future) =>
+	      [ `${dropZeroOrMultiply(text)}${op}`, future ];
+	const parseRnd = (op) => (text, future) =>
+	      [ `${dropZeroOrMultiply(text)}${Math.random()}`, future ];
+	const parseExp = (op) => (text, future) =>
+	      [ `${text}${op}`, future ];
+	const parseEval = (op) => (text, future) => {
+	    store.dispatch(calcEval());
+	    return null;
+	}
 	// full key definition
-	const key = (label, alabel, sclass, hotkey, emit, alt) => {
+	const key = (label, alabel, sclass, hotkey, parser, alt) => {
 	    var key = { label: label };		// key label
 	    if (alabel) key.alabel = alabel;	// aria-label
 	    if (sclass) key.sclass = sclass;	// class at span level
 	    if (hotkey) key.hotkey = hotkey;	// keyboard accelerators
 	    // text emitted, either text before insertion point
 	    // or a list of two elements before and after insertion point
-	    if (emit) key.emit = (typeof(emit) === 'string') ? [emit] : emit ;
+	    key.parser = parser;
 	    if (alt) key.alt = alt;		// the alternate key definition under invert shift
 	    return key;
 	}
+
 	// core keypad key definition
 	const corepad = (label, alabel) =>
-	      key(label, alabel, 'corepad', label, label);
+	      key(label, alabel, 'corepad', label, alabel ? parseRadix(label) : parseDigit(label));
 	const keypad = 
 	      [ [ // row 0
- 		  key('Rad', "switch from radians to degrees", "angle rad", null, 'Rad'),
-		  key('Deg', "switch from degrees to radians", "angle deg", null, 'Deg'),
-		  key('a!', "factorial", null, '!', '!'),
-		  key('(', "left parenthesis", "op", '(', ['(', ')']),
-		  key(')', "right parenthesis", "op", ')', ')'),
-		  key('%', "percentage", "op", '%', '%'),
-		  key('AC',"all clear", "erase acesAC", 'Delete', 'AC',
-		      key('CE', "clear entry",  "erase acesCE", 'Backspace', 'CE'))
+ 		  key('Rad', "switch from radians to degrees", "angle rad", null, parseRadDeg('Rad')),
+		  key('Deg', "switch from degrees to radians", "angle deg", null, parseRadDeg('Deg')),
+		  key('x!', "factorial", null, '!', parsePostfix('!')),
+		  key('(', "left parenthesis", "op", '(', parseLparen('(')),
+		  key(')', "right parenthesis", "op", ')', parseRparen(')')),
+		  key('%', "percentage", "op", '%', parseInfix('%')),
+		  key('AC',"all clear", "erase acesAC", 'Delete', parseAC('AC'),
+		      key('CE', "clear entry",  "erase acesCE", 'Backspace', parseCE('CE')))
 	      ],[ // row 1
-		  key('Inv', "inverse", "inverse", null, 'Inv'),
-		  key('sin', "sine", "uninvert", 's', ['sin(', ')'],
-		      key(html`sin<sup>&minus;1</sup>`, 'arcsine', "doinvert", 'S', ['arcsin(', ')'])),
-		  key('ln', "natural logarithm", "uninvert", 'l', ['ln(', ')'], 
-		      key(html` e<sup>x</sup>`, "e to the power of X", "doinvert", null, ['exp(', ')'])),
+		  key('Inv', "inverse", "inverse", null, parseInv('Inv')),
+		  key('sin', "sine", "uninvert", 's', parsePrefix('sin'),
+		      key(html`sin<sup>&minus;1</sup>`, 'arcsine', "doinvert", 'S', parsePrefix('arcsin'))),
+		  key('ln', "natural logarithm", "uninvert", 'l', parsePrefix('ln'), 
+		      key(html` e<sup>x</sup>`, "e to the power of X", "doinvert", null, parsePrefix('exp'))),
 		  corepad('7'),
 		  corepad('8'),
 		  corepad('9'),
-		  key('÷', "divide", "op", '/', '÷'),
+		  key('÷', "divide", "op", '/', parseInfix('÷')),
 	      ], [ // row 2
-		  key('π', "pi", null, 'p', 'π'),
-		  key('cos', "cosine", "uninvert", 'c', ['cos(', ')'],
-		      key(html`cos<sup>&minus;1</sup>`, "arccosine", "doinvert", 'C', ['arccos(', ')'] )),
-		  key('log', "logarithm", "uninvert", 'g', ['log(', ')'],
-		      key( html` 10<sup>x</sup>`, "ten to the power of X", "doinvert", null, ['pow(10,', ')'])),
+		  key('π', "pi", null, 'p', parseConstant('π')),
+		  key('cos', "cosine", "uninvert", 'c', parsePrefix('cos'),
+		      key(html`cos<sup>&minus;1</sup>`, "arccosine", "doinvert", 'C', parsePrefix('arccos') )),
+		  key('log', "logarithm", "uninvert", 'g', parsePrefix('log'),
+		      key( html` 10<sup>x</sup>`, "ten to the power of X", "doinvert", null, parsePrefix2('pow(10,', ')'))),
 		  corepad('4'),
 		  corepad('5'),
 		  corepad('6'),
-		  key('×', "multiply", "op", '*', '×'),
+		  key('×', "multiply", "op", '*', parseInfix('×')),
 	      ], [ // row 3
-		  key('e', "euler's number", null, 'e', 'e'),
-		  key('tan', "tangent", "uninvert", 't', ['tan(',')'],
-		      key( html` tan<sup>&minus;1`, "arctangent", "doinvert", 'T', ['arctan(',')'])),
-		  key('√', "square root", "uninvert", 'r', ['√(',')'],
-		      key( html` x<sup>2</sup>`, "square", "doinvert", null, ['pow(_,2)'])),
+		  key('e', "euler's number", null, 'e', parseConstant('e')),
+		  key('tan', "tangent", "uninvert", 't', parsePrefix('tan'),
+		      key( html` tan<sup>&minus;1`, "arctangent", "doinvert", 'T', parsePrefix('arctan'))),
+		  key('√', "square root", "uninvert", 'r', parsePrefix('√'),
+		      key( html` x<sup>2</sup>`, "square", "doinvert", null, parseGrabLHS('pow(_,2)'))),
 		  corepad('1'),
 		  corepad('2'),
 		  corepad('3'),
-		  key('-', "minus", "op", '-', '-'),
+		  key('-', "minus", "op", '-', parseInfix('-')),
 	      ], [		// row 4
-		  key('Ans', "answer", "uninvert", ['a', 'A'], 'Ans',
-		      key('Rnd', "random", "doinvert", 'R', 'Rnd' )),
-		  key('EXP', "exponential", null, 'E', 'E'),
-		  key( html`x<sup>y</sup>`, "X to the power of Y", "uninvert", '^', ['pow(_,',')'],
-		       key( html` <sup>y</sup>√x`, "Y root of X", "doinvert", null, ['pow(_,1÷',')'])),
+		  key('Ans', "answer", "uninvert", ['a', 'A'], parseAns('Ans'),
+		      key('Rnd', "random", "doinvert", 'R', parseRnd('Rnd') )),
+		  key('EXP', "enter exponential", null, 'E', parseExp('Exp')),
+		  key( html`x<sup>y</sup>`, "X to the power of Y", "uninvert", '^', parseGrabLHS2('pow(_,',')'),
+		       key( html` <sup>y</sup>√x`, "Y root of X", "doinvert", null, parseGrabLHS2('pow(_,1÷',')'))),
 		  corepad('0'),
 		  corepad('.', "point"),
-		  key('=', "equals", "equals op", ['=', 'Enter'], '='),
-		  key('+', "plus", "op", '+', '+'),
+		  key('=', "equals", "equals op", ['=', 'Enter'], parseEval('=')),
+		  key('+', "plus", "op", '+', parseInfix('+')),
 	      ] ];
 	return keypad;
     }
     
-    _render({_memo, _text, _invert, _aces}) {
+    hotkeyInit() {
+	// install keyboard accelerators
+	var hotkey = {}
+	const setHotkey = (aij) => {
+	    if (aij && aij.hotkey) {
+		if (typeof(aij.hotkey) === 'string') {
+		    hotkey[aij.hotkey] = aij;
+		} else {
+		    aij.hotkey.forEach((k) => hotkey[k] = aij)
+		}
+	    }
+	}
+	this.keypad.forEach( (ai, i) => {
+	    ai.forEach( (aij, j) => {
+		setHotkey(aij)
+		setHotkey(aij.alt);
+	    });
+	});
+	return hotkey;
+    }
+
+    _render({_memo, _text, _future, _invert}) {
 	const computedStyleInvert =  _invert ?
 	      html`<style>:host {--uninvert-display:none;--doinvert-display:table-cell;--invert-background:lightgrey;}</style>` :
 	      html`<style>:host {--uninvert-display:table-cell;--doinvert-display:none;--invert-background:darkgrey;}</style>` ;
-	const computedStyleAces = _aces ?
-	      html`<style>:host { --acesAC-display:none; --acesCE-display:table-cell;}</style>` :
+	const computedStyleAces = _text !== '0'  ?
+	      html`<style>:host { --acesAC-display:none;--acesCE-display:table-cell;}</style>` :
 	      html`<style>:host { --acesAC-display:table-cell;--acesCE-display:none;}</style>` ;
 	const computedStyles =
 	      html`${computedStyleInvert}${computedStyleAces}`;
@@ -288,6 +385,13 @@ ${computedStyles}
     font-weight: lighter;
     white-space: nowrap;
   }
+  span.txt31211 { /* _future */
+    float: right;
+    /* font-family: Roboto-Regular,helvetica,arial,sans-serif; */
+    font-weight: lighter;
+    white-space: nowrap;
+    color: #888;
+  }
   span#txt3121i { /* #cwos */
   }
 
@@ -406,7 +510,9 @@ ${computedStyles}
 	<div aria-level="3" id="txt31i" role="heading" tabindex="0"> <!-- #cwtltblr -->
 	  <div class="txt311"></div>		<!-- .cwtlptc -->
 	  <div class="txt312">			<!-- .cwtlotc -->
-	    <span class="txt3121" id="txt3121i">   ${_text}  </span>  <!-- .cwcot, #cwos -->
+	    <span class="txt3121" id="txt3121i" on-focus=${e => this._onFocus(e)}>
+	      ${_text}  <span class="txt31211"> ${_future}</span>
+	    </span>  <!-- .cwcot, #cwos -->
 	    <script>
 (function(){
     console.log("nonce-less nonce called");
@@ -447,77 +553,25 @@ ${computedStyles}
   </div>
 </section>`;
     }
-    _didRender() {
-	if ( ! this.hotkey) {
-	    // install keyboard accelerators
 
-	    // check event emit strings
-	    const setHotkey = (aij) => {
-		if (aij && aij.hotkey) {
-		    if (typeof(aij.hotkey) === 'string') {
-			this.hotkey[aij.hotkey] = aij;
-		    } else {
-			aij.hotkey.forEach((k) => this.hotkey[k] = aij)
-		    }
-		}
-	    }
-	    this.hotkey = {}
-	    this.keypad.forEach( (ai, i) => {
-		ai.forEach( (aij, j) => {
-		    setHotkey(aij)
-		    setHotkey(aij.alt);
-		});
-	    });
-	}
-	// make a map from button spans to the keypad objects
-	if ( ! this.button) {
-	    this.button = {}
-	    this.keypad.forEach( (ai, i) => {
-		ai.forEach( (aij, j) => {
-		    // this.button[`b${i}${j}`] = aij
-		});
-	    });
-	}
+    _didRender() {
     }
     
-    _stateChanged(state) {
-	this._memo = state.calc.memo;
-	this._text = state.calc.text;
-	this._invert = state.calc.invert;
-	this._aces = state.calc.aces;
-    }
-
     _onTap(event, aij) { 
-	if (aij) this._onEmit(aij.emit);
+	if (aij) this._onEmit(aij);
     }
     _onDown(event) {
-	if (event.key.length !== 1) console.log(`_onPress('${event.key}')`);
-	if (this.hotkey[event.key]) this._onEmit(this.hotkey[event.key].emit);
+	// if (event.key.length !== 1) console.log(`_onPress('${event.key}')`);
+	if (this.hotkey[event.key]) this._onEmit(this.hotkey[event.key]);
     }
-
-    _onEmit(emit) {
-	console.log(`_onEmit('${emit}')`);
-	switch (emit[0]) {
-	case 'Inv':
-	    store.dispatch(calcInvert( ! this._invert )); 
-	    break;
-	case 'Rad': case 'Deg':
-	    store.dispatch(calcRadDeg( ! this._raddeg ));
-	    break;
-	case 'CE':
-	    store.dispatch(calcCE());
-	    break;
-	case 'AC':
-	    store.dispatch(calcAC());
-	    break;
-	default:
-	    store.dispatch(calcInput(emit));
-	    // cancel invert after any key
-	    if (this._invert) store.dispatch(calcInvert( ! this._invert ))
-	    store.dispatch(calcParse());
-	    store.dispatch(calcEcho());
-	    break;
-	}
+    _onFocus(event) {
+	console.log(`_onFocus(${event.target})`);
+    }
+    
+    _onEmit(aij) {
+	// console.log(`_onEmit('${aij.label}')`);
+	const emit = aij.parser(this._text, this._future);
+	if (emit !== null) store.dispatch(calcInput(emit));
     }
 
 }
