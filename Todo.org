@@ -23,6 +23,26 @@
 	an expression that begins with 0, key a 0, and it
 	will be treated as an operand.
 [x] make focus on load to enable immediate key input.
-[ ] fix the location of the focus border on the text box.
+[x] fix the location of the focus border on the text box.
+	it's a bonus styling, onFocus augments classes,
+	classes of objects that enclose the focusee, and
+	those enclosing objects create the shadow box.
 [x] make the Inv button change background color when selected
-[ ] make the toggle cover that moves for the Rad Deg buttons.
+[x] make the toggle cover that moves for the Rad Deg buttons.
+	Just faded the deselected label.
+[x] make '^C' not trigger cos()
+[x] make ' ' fire selected button
+[x] make all focus targets key sensitive
+[ ] rewrite with web-components to encapsulate the div soup
+[ ] calculator-button,
+[ ] calculator-accumulator,
+[ ] calculator-history
+[ ] calculator-menu
+[ ] figure out firefox's problem with nested <span>'s in txt
+[ ] implement a material design color palette by role name
+	as css vars and use them to configure the colors in
+	the calculator.
+[ ] make the icon beefier, too thin
+[x] make 'D' a hotkey for 'Deg' which then toggles the Rad Deg
+	selector.
+

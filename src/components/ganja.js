@@ -1,8 +1,8 @@
-  /** Ganja.js - Geometric Algebra - not just algebra.  (The worlds smallest Geometric Algebra Implementation Generator)
-    * @author Enki
-    * @link   https://github.com/enkimute/ganja.js
-    * converted to es6 module by rec@elf.org
-    */
+/** Ganja.js - Geometric Algebra - not just algebra.  (The worlds smallest Geometric Algebra Implementation Generator)
+ * @author Enki
+ * @link   https://github.com/enkimute/ganja.js
+ * converted to es6 module by rec@elf.org
+*/
 export function Algebra(p,q,r) {
   // p can be options object.
     var fu=arguments[arguments.length-1],options=p; if (options instanceof Object) {

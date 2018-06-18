@@ -1,6 +1,8 @@
 /*
+@license
 Copyright (c) 2018 Roger E Critchlow Jr.  All rights reserved.
-This code may only be used under the BSD style license found at http://recri.github.io/change/LICENSE.txt
+This code may only be used under the BSD style license found at 
+https://github.com/recri/calculator/blob/master/LICENSE.txt.
 */
 import { html } from '@polymer/lit-element';
 import { PageViewElement } from './page-view-element.js';
@@ -183,7 +185,7 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
 	const keypad = 
 	      [ [ // row 0
  		  key('Rad', "switch from radians to degrees", "angle rad", null, parseRadDeg('Rad')),
-		  key('Deg', "switch from degrees to radians", "angle deg", null, parseRadDeg('Deg')),
+		  key('Deg', "switch from degrees to radians", "angle deg", 'D',  parseRadDeg('Deg')),
 		  key('x!', "factorial", null, '!', parsePostfix('!')),
 		  key('(', "left parenthesis", "op", '(', parseLparen('(')),
 		  key(')', "right parenthesis", "op", ')', parseRparen(')')),
@@ -267,17 +269,17 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
 	      html`<style>:host {--angle-rad-color:black;--angle-deg-color:darkgrey}</style>` ;
 	const computedStyles =
 	      html`${computedStyleInvert}${computedStyleAces}${computedStyleRadDeg}`;
-	const span = (x) => {
+	const span = (x,r,c,alt) => {
 	    if (! x) return html``;
 	    const tap = (e) => this._onTap(e,x);
 	    return x.sclass && x.alabel ?
-		html`<span class$="btn ${x.sclass}" aria-label$="${x.alabel}" role="button" tabindex="0" on-tap=${e => tap(e)}>${x.label}</span>` :
+		html`<span aij=${[r, c, alt]} class$="btn ${x.sclass}" aria-label$="${x.alabel}" role="button" tabindex="0" on-tap=${e => tap(e)}>${x.label}</span>` :
 		x.alabel ?
-		html`<span class="btn" aria-label$="${x.alabel}" role="button" tabindex="0" on-tap=${e => tap(e)}>${x.label}</span>` :
-		html`<span class$="btn ${x.sclass}" role="button" tabindex="0" on-tap=${e => tap(e)}>${x.label}</span>` ;
+		html`<span aij=${[r, c, alt]} class="btn" aria-label$="${x.alabel}" role="button" tabindex="0" on-tap=${e => tap(e)}>${x.label}</span>` :
+		html`<span aij=${[r, c, alt]} class$="btn ${x.sclass}" role="button" tabindex="0" on-tap=${e => tap(e)}>${x.label}</span>` ;
 	}
 	const button = (r,c,side,k) => 
-	      html`<div class$="col ${side} col-${c}"><div class="in-col">${span(k)}${span(k.alt)}</div></div>`;
+	      html`<div class$="col ${side} col-${c}"><div class="in-col">${span(k,r,c,false)}${span(k.alt,r,c,true)}</div></div>`;
 	const lftGenerate = (r) => /* .cwbr */
 	      html`<div class$="row lft row-${r}">${[0,1,2].map(c => button(r,c,'lft',this.keypad[r][c]))}</div>`;
 	const rgtGenerate = (r) => /* .cwbr */
@@ -611,7 +613,7 @@ ${computedStyles}
     div.kpd{height:68%}		/* .cwbsc */
   }
 </style>
-<section on-keydown=${e => this._onDown(e)}>
+<section>
   <div class="frm">			<!-- data-hveid="40" -->
     <div class="frm1" id="frm1i">	<!-- .vk_c .card-section, #cwmcwd -->
       <div class="frm11">		<!-- .cwmd -->
@@ -682,22 +684,48 @@ ${computedStyles}
     _didRender() {
 	if ( ! this.focused) {
 	    /* arrange to adjust the classes of an enclosing div when
-	     * the text entry div gets hovered or focused
-	     * and grab the focus on load, too.
-	     */
+	     * the text entry div gets hovered or focused */
 	    const div31 = this.shadowRoot.getElementById('txt31i');
 	    const div1 = this.shadowRoot.getElementById('txt1i');
 	    div31.addEventListener('focus', _ => div1.classList.add('focused'));
 	    div31.addEventListener('blur', _ => div1.classList.remove('focused'));
 	    div31.addEventListener('mouseover', _ => div1.classList.add('hovered'));
 	    div31.addEventListener('mouseout', _ => div1.classList.remove('hovered'));
+	    /* arrange to monitor focus and keyboard events for the component */
+	    this.shadowRoot.addEventListener('focus', e => this._onFocus(e), true);
+	    this.shadowRoot.addEventListener('blur', e => this._onBlur(e), true);
+	    this.shadowRoot.addEventListener('keydown', e => this._onDown(e));
+	    /* and grab the focus on load, too. */
 	    div31.focus();
 	    this.focused = true;
 	}
     }
     
+    _onFocus(event) {
+	// console.log(`onFocus(${event.target.className})`);
+	this._focusee = event.target;
+	// if (this._focusee.aij) console.log(`onFocus(${this._focusee.aij})`);
+    }
+    _onBlur(event) {
+	// console.log(`onBlur(${event.target.className})`);
+	this._focusee = null;
+    }
     _onTap(event, aij) { this._onEmit(aij); }
-    _onDown(event) { this._onEmit(this.hotkey[event.key]); }
+    _onDown(event) { 
+	if (event.altKey || event.ctrlKey || event.metaKey) return;
+	if (this.hotkey[event.key]) {
+	    this._onEmit(this.hotkey[event.key]);
+	    event.preventDefault()
+	} else if (event.key === ' ' && this._focusee.aij) {
+	    // if ' ' and we are focused on a button, fire that button
+	    const [i, j, isAlt] = this._focusee.aij;
+	    const aij = isAlt ? this.keypad[i][j].alt : this.keypad[i][j];
+	    this._onEmit(aij);
+	    event.preventDefault()
+	} else {
+	    // console.log(`_onDown('${event.key}') left to system`);
+	}
+    }
     
     _onEmit(aij) {
 	// console.log(`_onEmit('${aij.label}')`);
