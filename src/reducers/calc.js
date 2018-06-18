@@ -16,7 +16,8 @@ const calc = (state = {
     future: '',
     invert: false,
     raddeg: false,
-    history: []
+    history: [],
+    tree: null,
 }, action) => {
     switch (action.type) {
     case CALC_INVERT: return { ...state, invert: ! state.invert };

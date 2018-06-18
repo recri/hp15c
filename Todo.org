@@ -1,4 +1,5 @@
 [ ] implement basic google "calculator"
+[x] modified ganja.js to import {Algebra} from './ganja.js'
 [ ] use ganja.js to implement clifford algebras
 [x] make an appropriate icon
 [x] make basic google calculator keypad layout.
@@ -21,3 +22,7 @@
 	something the calculator left there.  If you want
 	an expression that begins with 0, key a 0, and it
 	will be treated as an operand.
+[x] make focus on load to enable immediate key input.
+[ ] fix the location of the focus border on the text box.
+[x] make the Inv button change background color when selected
+[ ] make the toggle cover that moves for the Rad Deg buttons.
