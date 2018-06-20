@@ -17,7 +17,8 @@ const calc = (state = {
     invert: false,
     raddeg: false,
     history: [],
-    tree: null,
+    ans: '0',
+    tape: [],
 }, action) => {
     switch (action.type) {
     case CALC_INVERT: return { ...state, invert: ! state.invert };
@@ -39,9 +40,20 @@ const calc = (state = {
 	} else
 	    return state;
     case CALC_EVAL:
-	// compute the expression, 
-	// return result in accumulator
-	// note computation and result in memo
+	// okay, there needs to be another step after eval
+	// where the text switches to the next text entry
+	// and the memo switches to `Ans = ${ans}`
+	const ans = action.ans;
+	const memo = `${state.text} = ${action.ans}`;
+	state.tape.push(memo); // caution
+	return {
+	    ...state,
+	    ans: ans,
+	    text: ans,
+	    memo: memo,
+	    history: []
+	};
+	    
 	console.log(`eval ${state.text}`);
 	return state;
     default:

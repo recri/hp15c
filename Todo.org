@@ -1,6 +1,9 @@
 [ ] implement basic google "calculator"
 [x] modified ganja.js to import {Algebra} from './ganja.js'
 [ ] use ganja.js to implement clifford algebras
+	only does +,-,*,/,basis vectors and various other
+	products, so keep the cnumber(), and probably import it
+	into cnumber
 [x] make an appropriate icon
 [x] make basic google calculator keypad layout.
 [x] add drop shadows to basic layout

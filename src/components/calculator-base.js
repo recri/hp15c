@@ -15,8 +15,9 @@ import { connect } from 'pwa-helpers/connect-mixin.js';
 import { store } from '../store.js';
 import { calcInvert, calcRadDeg, calcInput, calcAC, calcCE, calcEval } from '../actions/calc.js';
 
-import { Algebra } from './ganja.js';
-import { jsep } from './jsep.js';
+//import { Algebra } from './ganja.js';
+import {Parser, Expression} from './expr-eval.js';
+const _parser = new Parser();
 
 const _ignore = (e) => false;
 
@@ -44,8 +45,7 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
 	    _invert: Boolean,	// Show normal or inverted labels
 	    _raddeg: Boolean,	// Use Rad or Deg for angle
 	    _history: Array,	// History of input for the current expression
-	    _tree: Object,	// Parse tree
-	    _answer: String,	// Last evaluation result
+	    _ans: String,	// Last evaluation result
 	}
     }
 
@@ -56,8 +56,7 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
 	this._invert = state.calc.invert;
 	this._raddeg = state.calc.raddeg;
 	this._history = state.calc.history;
-	this._tree = state.calc.tree;
-	this._answer = state.calc.answer;
+	this._ans = state.calc.ans;
     }
 
     // Keypad is a list of rows, 
@@ -74,98 +73,167 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
 	const multiply = '×';
 	const divide = '÷';
 	const radical = '√';
+	const number = /[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?/
+
 
 	// the parser
 	const parseExpression = (str) => {
 	    try {
-		return [true, jsep(str)];
+		return [true, _parser.evaluate(str.replace(/×/g, '*').replace(/÷/g, '/').replace(/√/, 'sqrt'), {Ans: this._ans})];
 	    } catch(e) {
 		return [false, e];
 	    }
 	}
 
-	// parsing helpers
-	// [ ] inserted '×' after a '+' 
-	const dropZeroOrMultiply = (text) =>
-	      text === '0' ? '' : `${text} ${multiply} `;
-	// uh, canAddDigit, canAddRadix, canAddExponent, splitTextIntoLHSAndTheRest
-	// parsing function generators
-	const parseRadDeg = (op) => (text, future) => {
+	// parsing helpers, these are to construct the new text and future given
+	// an input which might replace the existing text, be appended to the 
+	// existing text, or appended with a free '×'.
+
+	// go back through text counting open and close parens
+	// to find the first unmatched open.  split the text
+	// into the part up to and including the unmatched open
+	// and the part after the unmatched open
+	const findLastUnmatchedParen = (text, future, history) => {
+	    let nopen = 0, nclose = 0;
+	    for (let i = text.length-1; i >= 0; i -= 1) {
+		const c = text.charAt(i);
+		if (c == '(')
+		    nopen += 1;
+		else if (c == ')')
+		    nclose += 1;
+		if (nopen > nclose)
+		    return [text.slice(0,i+1), text.slice(i+1)]
+	    }
+	    return ['', text];
+	}
+
+	// find the left hand side expression in text
+	// return a list with text split into before the left hand side
+	// and the left hand side.
+	// or return null if there is no left hand side
+	const findLHS = (text, future, history) => {
+	    // if the acc contains nothing but the previous answer
+	    if (history.length == 0) return ['', text];
+	    // split at the last unmatched open paren
+	    // which will be the split ['', text] 
+	    // if everything matches.
+	    const [llhs, lhs] = findLastUnmatchedParen(text);
+	    const [success, ans] = parseExpression(lhs);
+	    return success ? [ llhs, lhs ] : null;
+	}
+
+	// ensure that we have no left hand side
+	// by throwing away the answer from the last evaluation
+	// or by inserting an '×' 
+	// return the part of text we keep
+	const findNoLHS = (text, future, history) => {
+	    // if the accumulator has the last result in it, just drop it
+	    if (history.length === 0) return '';
+	    // if findLHS finds a LHS
+	    if (findLHS(text, future, history)) return `${text} ${multiply}`;
+	    return text;
+	}
+
+	//
+	// parsing functions for keypad entries
+	//
+	// the simplest ones do nothing to text and future, they simply twiddle the
+	// calculator state and return null.
+	const parseRadDeg = (op) => (text, future, history) => {
 	    store.dispatch(calcRadDeg());
 	    return null;
 	}
-	const parsePostfix = (op) => (text, future) =>
-	      [ `${text}${op}`, future ];
-	const parseLparen = (op) => (text, future) =>
-	      [ `${dropZeroOrMultiply(text)}(`, `)${future}` ] ;
-	const parseRparen = (op) => (text, future) =>
-	      future.length && future.charAt(0) === ')' ? [ `${text})`, future.slice(1) ] : null ;
-	const parseInfix = (op) => (text, future) =>
-	      [ `${text} ${op} `, future ];
-	const parseAC = (op) => (text, future) => {
+	const parseAC = (op) => (text, future, history) => {
 	    store.dispatch(calcAC());
 	    return null;
 	}
-	const parseCE = () => (text, future) => {
+	const parseCE = () => (text, future, history) => {
 	    store.dispatch(calcCE());
 	    return null;
 	}
-	const parseInv = (op) => (text, future) => {
+	const parseInv = (op) => (text, future, history) => {
 	    store.dispatch(calcInvert());
 	    return null;
 	}
-	const parsePrefix = (op) => (text, future) =>
-	      [ `${dropZeroOrMultiply(text)}${op}(`, `)${future}` ];
-	const parsePrefix2 = (op, fut) => (text, future) =>
-	      [ `${dropZeroOrMultiply(text)}${op}`, `${fut}${future}` ];
-	// [ ] appended digit after )
-	const parseDigit = (op) => (text, future) =>
-	      text === '0' ?
-	      [ op, future ] : [ `${text}${op}`, future ] ;
-	const parseRadix = (op) => (text, future) =>
-	      [ `${text}${op}`, future ];
-	const parseConstant = (op) => (text, future) =>
-	      [ `${dropZeroOrMultiply(text)}${op}`, future ];
-	const parseGrabLHS = (op) => (text, future) => {
-	    const expr = jsep(text);
-	    console.log(`jsep(${text}) yields ${expr}`)
-	    return [ `${op.replace(/_/, text)}`, future ] ; // sort of bogus
+
+	// if the input is an infix binary operator, a postfix unary operator, or a GrabLHS operator, 
+	// then we need to have a left hand side for it to combine with.
+	// that's fine, except that + and - are also unary operators and they can appear after E
+	// in the exponential notation.
+	const parseInfix = (op) => (text, future, history) =>
+	      findLHS(text, future, history) ? [ `${text}${op}`, future ] : null ;
+	const parsePostfix = (op) => (text, future, history) =>
+	      findLHS(text, future, history) ? [ `${text}${op}`, future ] : null;
+	const parseGrabLHS = (op) => (text, future, history) => {
+	    // okay, so this should use the part of the text after the most recentlyu
+	    // opened paren that has not closed, or the beginning of everything
+	    const find = findLHS(text, future, history);
+	    if (!find) return null;
+	    const [llhs, lhs] = find;
+	    return [ `${llhs}${op.replace(/_/, lhs)}`, future ] ;
 	}
-        const parseGrabLHS2 = (op, fut) => (text, future) => {
-	    return [ `${op.replace(/_/, text)}`, `${fut}${future}` ];
+        const parseGrabLHS2 = (op, fut) => (text, future, history) => {
+	    const find = findLHS(text, future, history);
+	    if (!find) return null;
+	    const [llhs, lhs] = find;
+	    return [ `${llhs}${op.replace(/_/, lhs)}`, `${fut}${future}` ];
 	}
-	const parseAns = (op) => (text, future) =>
-	      [ `${dropZeroOrMultiply(text)}${op}`, future ];
-	const parseRnd = (op) => (text, future) =>
-	      [ `${dropZeroOrMultiply(text)}${Math.random().toFixed(7)}`, future ];
-	const parseExp = (op) => (text, future) =>
-	      [ `${text}E`, future ];
+	// rparen needs a complete LHS, too, and an rparen in the future
+	const parseRparen = (op) => (text, future, history) =>
+	      future.length && future.charAt(0) === ')' && findLHS(text, future, history) ?
+	      [ `${text})`, future.slice(1) ] : null ;
+
+	// open paren, prefix operators, and whole numbers need no left hand side
+	const parseLparen = (op) => (text, future, history) =>
+	      [ `${findNoLHS(text, future, history)}(`, `)${future}` ] ;
+	const parsePrefix = (op) => (text, future, history) =>
+	      [ `${findNoLHS(text, future, history)}${op}(`, `)${future}` ];
+	const parsePrefix2 = (op, fut) => (text, future, history) =>
+	      [ `${findNoLHS(text, future, history)}${op}`, `${fut}${future}` ];
+	const parseConstant = (op) => (text, future, history) =>
+	      [ `${findNoLHS(text, future, history)}${op}`, future ];
+	const parseAns = (op) => (text, future, history) =>
+	      [ `${findNoLHS(text, future, history)}${op}`, future ];
+	const parseRnd = (op) => (text, future, history) =>
+	      [ `${findNoLHS(text, future, history)}${Math.random().toFixed(7)}`, future ];
+
+	// parts of numbers, also [-+],
+	const parseDigit = (op) => (text, future, history) =>
+	      history.length === 0 ? [ op, future ] : 
+	      ! text.match(/([0-9]*\.?[0-9]+|[0-9]+\.?[0-9]*)$/) ? [ `${findNoLHS(text, future, history)}${op}`, future ] :
+	      [ `${text}${op}`, future ] ;
+	const parseRadix = (op) => (text, future, history) =>
+	      history.length === 0 ? [ op, future ] :
+	      ! text.match(/([0-9]*\.?[0-9]+|[0-9]+\.?[0-9]*)$/) ? [ `${findNoLHS(text, future, history)}${op}`, future ] :
+	    text.match(/([0-9]*\.[0-9]+|[0-9]+\.[0-9]*)$/) ? null :
+	    [ `${text}${op}`, future ];
+	const parseExp = (op) => (text, future, history) =>
+	      text.match(/([0-9]*\.?[0-9]+|[0-9]+\.?[0-9]*)$/) ?
+	      [ `${text}E`, future ] : null;
+
+	// minus and plus act as infix or prefix or as prefix in number exponents
+	const parseInfixPrefix = (op) => (text, future, history) => {
+	    console.log(`parseInfixPrefix(${op})(${text},...)`);
+	    // take care of the numbers first
+	    if (text.slice(-1) === 'E') return [`${text}${op}`, future]
+	    // try to make an infix operator
+	    const infix = parseInfix(op)(text, future, history);
+	    if (infix) return infix;
+	    return parsePrefix(op)(text, future, history);
+	}
+	
+	// whole number sources, want no left hand side
+	// the evaluate
 	const parseEval = (op) => (text, future) => {
-	    const walk = (t) => {
-		switch (t.type) {
-		case 'BinaryExpression':
-		    return `${walk(t.left)}${t.operator}${walk(t.right)}`;
-		case 'UnaryExpression':
-		    return `${t.operator}${walk(t.argument)}`;
-		case 'PostfixExpression':
-		    return `${walk(t.argument)}${t.operator}`;
-		case 'CallExpression':
-		    return `${walk(t.callee)}(${t.arguments.map(t => walk(t)).join(',')})`;
-		case 'Identifier':
-		    return t.name;
-		case 'Literal':
-		    return t.raw;
-		default:
-		    console.log(`need handler for ${t.type} in walk`);
-		    return '';
-		}
-	    }
-	    const [success, expr] = parseExpression(text)
-	    if (success) console.log(walk(expr));
-	    else console.log(expr.toString().split('\n')[0]);
-	    store.dispatch(calcEval());
+	    const [success, ans] = parseExpression(text)
+	    if (success)
+		store.dispatch(calcEval(ans.toFixed(7)));
+	    else
+		console.log(expr.toString());
+	    // console.log(expr.toString().split('\n')[0]);
 	    return null;
 	}
+
 	// full key definition
 	const key = (label, alabel, sclass, hotkey, parser, alt) => {
 	    var key = { label: label };		// key label
@@ -196,7 +264,7 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
 		  key('Inv', "inverse", "inverse", null, parseInv('Inv')),
 		  key('sin', "sine", "uninvert", 's', parsePrefix('sin'),
 		      key(html`sin<sup>&minus;1</sup>`, 'arcsine', "doinvert", 'S', parsePrefix('arcsin'))),
-		  key('ln', "natural logarithm", "uninvert", 'l', parsePrefix('ln'), 
+		  key('ln', "natural logarithm", "uninvert", ['l','L'], parsePrefix('ln'), 
 		      key(html` e<sup>x</sup>`, "e to the power of X", "doinvert", null, parsePrefix('exp'))),
 		  corepad('7'),
 		  corepad('8'),
@@ -206,7 +274,7 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
 		  key('π', "pi", null, 'p', parseConstant('π')),
 		  key('cos', "cosine", "uninvert", 'c', parsePrefix('cos'),
 		      key(html`cos<sup>&minus;1</sup>`, "arccosine", "doinvert", 'C', parsePrefix('arccos') )),
-		  key('log', "logarithm", "uninvert", 'g', parsePrefix('log'),
+		  key('log', "logarithm", "uninvert", ['g','G'], parsePrefix('log'),
 		      key( html` 10<sup>x</sup>`, "ten to the power of X", "doinvert", null, parsePrefix2('pow(10,', ')'))),
 		  corepad('4'),
 		  corepad('5'),
@@ -216,22 +284,22 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
 		  key('e', "euler's number", null, 'e', parseConstant('e')),
 		  key('tan', "tangent", "uninvert", 't', parsePrefix('tan'),
 		      key( html` tan<sup>&minus;1`, "arctangent", "doinvert", 'T', parsePrefix('arctan'))),
-		  key('√', "square root", "uninvert", 'r', parsePrefix('√'),
+		  key('√', "square root", "uninvert", ['q', 'Q'], parsePrefix('√'),
 		      key( html` x<sup>2</sup>`, "square", "doinvert", null, parseGrabLHS('pow(_,2)'))),
 		  corepad('1'),
 		  corepad('2'),
 		  corepad('3'),
-		  key('-', "minus", "op", '-', parseInfix('-')),
+		  key('-', "minus", "op", '-', parseInfixPrefix('-')),
 	      ], [		// row 4
 		  key('Ans', "answer", "uninvert", ['a', 'A'], parseAns('Ans'),
 		      key('Rnd', "random", "doinvert", 'R', parseRnd('Rnd') )),
 		  key('EXP', "enter exponential", null, 'E', parseExp('Exp')),
 		  key( html`x<sup>y</sup>`, "X to the power of Y", "uninvert", '^', parseGrabLHS2('pow(_,',')'),
-		       key( html` <sup>y</sup>√x`, "Y root of X", "doinvert", null, parseGrabLHS2('pow(_,1÷',')'))),
+		       key( html` <sup>y</sup>√x`, "Y root of X", "doinvert", 'r', parseGrabLHS2('pow(_,1÷',')'))),
 		  corepad('0'),
 		  corepad('.', "point"),
 		  key('=', "equals", "equals op", ['=', 'Enter'], parseEval('=')),
-		  key('+', "plus", "op", '+', parseInfix('+')),
+		  key('+', "plus", "op", '+', parseInfixPrefix('+')),
 	      ] ];
 	return keypad;
     }
@@ -273,10 +341,10 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
 	    if (! x) return html``;
 	    const tap = (e) => this._onTap(e,x);
 	    return x.sclass && x.alabel ?
-		html`<span aij=${[r, c, alt]} class$="btn ${x.sclass}" aria-label$="${x.alabel}" role="button" tabindex="0" on-tap=${e => tap(e)}>${x.label}</span>` :
+		html`<span aij=${x} class$="btn ${x.sclass}" aria-label$="${x.alabel}" role="button" tabindex="0" on-tap=${e => tap(e)}>${x.label}</span>` :
 		x.alabel ?
-		html`<span aij=${[r, c, alt]} class="btn" aria-label$="${x.alabel}" role="button" tabindex="0" on-tap=${e => tap(e)}>${x.label}</span>` :
-		html`<span aij=${[r, c, alt]} class$="btn ${x.sclass}" role="button" tabindex="0" on-tap=${e => tap(e)}>${x.label}</span>` ;
+		html`<span aij=${x} class="btn" aria-label$="${x.alabel}" role="button" tabindex="0" on-tap=${e => tap(e)}>${x.label}</span>` :
+		html`<span aij=${x} class$="btn ${x.sclass}" role="button" tabindex="0" on-tap=${e => tap(e)}>${x.label}</span>` ;
 	}
 	const button = (r,c,side,k) => 
 	      html`<div class$="col ${side} col-${c}"><div class="in-col">${span(k,r,c,false)}${span(k.alt,r,c,true)}</div></div>`;
@@ -368,13 +436,22 @@ ${computedStyles}
   div.mem2i { /* #cwletbl */
   }
   div.mem21 { /* .cwleotc */
-	display:table-cell;
-	overflow:hidden;
-	padding-right:2%;
-	vertical-align:bottom;
-	width:100%
+    display:table-cell;
+    overflow:hidden;
+    padding-right:2%;
+    vertical-align:bottom;
+    width:100%
   }
   span.mem211 { /* .cwclet */
+    -moz-user-select:text;
+    -webkit-user-select:text;
+    -ms-user-select:text;
+    position:absolute;
+    bottom:0;
+    font-family:Roboto-Regular,helvetica,arial,sans-serif;
+    font-weight:lighter;
+    right:0;
+    white-space:nowrap
   }
   span#mem211i { /* #cwles */
   }
@@ -718,9 +795,7 @@ ${computedStyles}
 	    event.preventDefault()
 	} else if (event.key === ' ' && this._focusee.aij) {
 	    // if ' ' and we are focused on a button, fire that button
-	    const [i, j, isAlt] = this._focusee.aij;
-	    const aij = isAlt ? this.keypad[i][j].alt : this.keypad[i][j];
-	    this._onEmit(aij);
+	    this._onEmit(this._focusee.aij);
 	    event.preventDefault()
 	} else {
 	    // console.log(`_onDown('${event.key}') left to system`);
@@ -730,7 +805,7 @@ ${computedStyles}
     _onEmit(aij) {
 	// console.log(`_onEmit('${aij.label}')`);
 	if (aij) {
-	    const emit = aij.parser(this._text, this._future, this._tree, this._history);
+	    const emit = aij.parser(this._text, this._future, this._history);
 	    if (emit !== null) store.dispatch(calcInput(emit));
 	}
     }

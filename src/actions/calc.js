@@ -20,4 +20,4 @@ export const calcParse = () => (dispatch) => dispatch({ type: CALC_PARSE });
 export const calcEcho = () => (dispatch) => dispatch({ type: CALC_ECHO});
 export const calcAC = () => (dispatch) => dispatch({ type: CALC_AC});
 export const calcCE = () => (dispatch) => dispatch({ type: CALC_CE});
-export const calcEval = () => (dispatch) => dispatch({ type: CALC_EVAL });
+export const calcEval = (ans) => (dispatch) => dispatch({ type: CALC_EVAL, ans });
