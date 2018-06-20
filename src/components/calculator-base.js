@@ -79,9 +79,10 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
 	// the parser
 	const parseExpression = (str) => {
 	    try {
-		return [true, _parser.evaluate(str.replace(/×/g, '*').replace(/÷/g, '/').replace(/√/, 'sqrt'), {Ans: this._ans})];
-	    } catch(e) {
-		return [false, e];
+		return [true, _parser.evaluate(str.replace(/×/g, '*').replace(/÷/g, '/').replace(/√/, 'sqrt'),
+					       {Ans: this._ans, 'π': Math.PI, 'e': Math.E})];
+	    } catch(err) {
+		return [false, err];
 	    }
 	}
 
@@ -219,17 +220,18 @@ export class CalculatorBase extends connect(store)(GestureEventListeners(PageVie
 	    // try to make an infix operator
 	    const infix = parseInfix(op)(text, future, history);
 	    if (infix) return infix;
-	    return parsePrefix(op)(text, future, history);
+	    return [ `${findNoLHS(text, future, history)}${op}`, `${future}` ];
 	}
 	
 	// whole number sources, want no left hand side
 	// the evaluate
 	const parseEval = (op) => (text, future) => {
-	    const [success, ans] = parseExpression(text)
-	    if (success)
+	    const [success, ans] = parseExpression(`${text}${future}`)
+	    if (success) {
+		console.log(`ans: ${ans}`)
 		store.dispatch(calcEval(ans.toFixed(7)));
-	    else
-		console.log(expr.toString());
+	    } else
+		console.log(ans.toString());
 	    // console.log(expr.toString().split('\n')[0]);
 	    return null;
 	}

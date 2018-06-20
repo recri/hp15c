@@ -44,12 +44,13 @@ const calc = (state = {
 	// where the text switches to the next text entry
 	// and the memo switches to `Ans = ${ans}`
 	const ans = action.ans;
-	const memo = `${state.text} = ${action.ans}`;
+	const memo = `${state.text}${state.future} = ${action.ans}`;
 	state.tape.push(memo); // caution
 	return {
 	    ...state,
 	    ans: ans,
 	    text: ans,
+	    future: '',
 	    memo: memo,
 	    history: []
 	};

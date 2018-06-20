@@ -1,4 +1,4 @@
-[ ] implement basic google "calculator"
+[x] implement basic google "calculator"
 [x] modified ganja.js to import {Algebra} from './ganja.js'
 [ ] use ganja.js to implement clifford algebras
 	only does +,-,*,/,basis vectors and various other
@@ -16,11 +16,11 @@
 	in the accumulator.
 [x] implemented a simple history stack 
 [x] implemented a simple input parser
-[ ] add more error checking to input parser
-[ ] construct AST while parsing,
+[x] add more error checking to input parser
+[x] construct AST while parsing,
 	with ranges of input text identified
 	and manage it on the history stack, too.
-[ ] text === '0' is the wrong test, history.length === 0
+[x] text === '0' is the wrong test, history.length === 0
 	is true when the zero in the accumulator is just
 	something the calculator left there.  If you want
 	an expression that begins with 0, key a 0, and it
@@ -48,4 +48,9 @@
 [ ] make the icon beefier, too thin
 [x] make 'D' a hotkey for 'Deg' which then toggles the Rad Deg
 	selector.
-
+[ ] fix %
+[x] fix pi
+[x] fix e
+[ ] can I fix the div soup and keep focus traversal?
+[x] auto close future parens on =
+[ ] replace NaN result with error, figure out errors better
