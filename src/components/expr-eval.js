@@ -1132,6 +1132,10 @@ export const [Parser, Expression] = (function (global, factory) {
     return a % b;
   }
 
+  function pct(a, b) {
+    return a/100 * b;
+  }
+
   function concat(a, b) {
     return '' + a + b;
   }
@@ -1389,7 +1393,8 @@ export const [Parser, Expression] = (function (global, factory) {
       '-': sub,
       '*': mul,
       '/': div,
-      '%': mod,
+      '%': pct,
+      mod: mod,
       '^': Math.pow,
       '||': concat,
       '==': equal,
