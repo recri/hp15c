@@ -33,17 +33,18 @@ export const navigate = (path) => (dispatch) => {
 
 const loadPage = (page) => async (dispatch) => {
     switch(page) {
-    case 'base': // default page already imported aggressively
+    case 'base': 
+	// default page already imported aggressively
 	// await import('../components/calculator-base.js');
 	break;
-    case 'e2': await import('../components/calculator-e2.js'); break;
-    case 'e3': await import('../components/calculator-e3.js'); break;
     case 'settings': await import('../components/calculator-settings.js'); break;
     case 'about': await import('../components/calculator-about.js'); break;
+    case 'tape': await import('../components/calculator-tape.js'); break;
+    case 'keys': await import('../components/calculator-keys.js'); break;
     case 'tests': await import('../components/calculator-tests.js'); break;
+    case 'hp15c': await import('../components/hp15c-calculator.js'); break;
     default: await import('../components/calculator-view404.js'); break;
     }
-
     dispatch(updatePage(page));
 }
 

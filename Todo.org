@@ -56,4 +56,18 @@
 [ ] replace NaN result with error, figure out errors better
 [ ] replace toFixed(7) with a more adaptive format
 [ ] options, set the number of fixed places kept
-
+[ ] work out flex layout details
+	going from wide to narrow
+[x] drawer menu draws under calculator, z-index issue, not sure
+	what requires z in the calculator layout
+[ ] drawer menu does not return to calculator
+[ ] eliminate title
+[ ] move hamburger menu onto calculator frame
+	meaning all the other pages need a calculator frame, too?
+[ ] Interesting how the functions move toward reverse polish even
+	when you're presenting an algebraic formula, the grabLHS
+	operators are sort of half reverse polish, and there are
+	others which would be useful in reverse polish forms, such
+	as sqrt('of the expression I just entered') rather than
+	evaluate the expression followed by sqrt(Ans).
+[ ] google only inserts an x if necessary, 2pi shows with no space.

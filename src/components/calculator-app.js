@@ -92,7 +92,7 @@ class CalculatorApp extends connect(store)(LitElement) {
         color: var(--app-header-text-color);
         border-bottom: 1px solid #eee;
       }
-
+      app-drawer { z-index: 4 }
       .toolbar-top {
         background-color: var(--app-header-background-color);
       }
@@ -198,8 +198,11 @@ class CalculatorApp extends connect(store)(LitElement) {
       <nav class="drawer-list">
 	<a selected?="${_page === 'base'}" href="/" title="Calculator">Calculator</a>
 	<a selected?="${_page === 'settings'}" href="/settings" title="Change the settings.">Settings</a>
-	<a selected?="${_page === 'about'}" href="/about" title="About the app.">About</a>
+	<a selected?="${_page === 'tape'}" href="/tape" title="Review the tape of computations.">Tape</a>
+	<a selected?="${_page === 'keys'}" href="/keys" title="Keyboard accelerator table.">Keys</a>
 	<a selected?="${_page === 'tests'}" href="/tests" title="Test the app.">Tests</a>
+	<a selected?="${_page === 'hp15c'}" href="/hp15c" title="HP15C Calculator.">HP15C</a>
+	<a selected?="${_page === 'about'}" href="/about" title="About the app.">About</a>
 	${installPrompt}
       </nav>
     </app-drawer>
@@ -209,7 +212,10 @@ class CalculatorApp extends connect(store)(LitElement) {
       <calculator-base class="page" active?="${_page === 'base'}"></calculator-base>
       <calculator-settings class="page" active?="${_page === 'settings'}"></calculator-settings>
       <calculator-about class="page" active?="${_page === 'about'}"></calculator-about>
+      <calculator-tape class="page" active?="${_page === 'tape'}"></calculator-tape>
+      <calculator-keys class="page" active?="${_page === 'keys'}"></calculator-keys>
       <calculator-tests class="page" active?="${_page === 'tests'}"></calculator-tests>
+      <hp15c-calculator class="page" active?="${_page === 'hp15c'}"></hp15c-caclulator>
       <calculator-view404 class="page" active?="${_page === 'view404'}"></calculator-view404>
     </main>
 

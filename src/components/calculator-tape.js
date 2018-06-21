@@ -14,23 +14,18 @@ import { html } from '@polymer/lit-element';
 import { PageViewElement } from './page-view-element.js';
 import { SharedStyles } from './shared-styles.js';
 
-class CalculatorAbout extends PageViewElement {
+class CalculatorTape extends PageViewElement {
   _render(props) {
     return html`
       ${SharedStyles}
       <section>
-        <h2>About</h2>
+        <h2>Tape</h2>
         <p>
-	This app is a mashup between the calculator that <a href="https://www.google.com/search?q=calculator">this search</a> returns
-	at the top of the results page,
-	Matt Crumley's expression  <a href="https://github.com/silentmatt/expr-eval#readme">parser/evalualtor</a> in javascript,
-	Enkimute's <a href="https://github.com/enkimute/ganja.js#readme">ganja.js</a> geometric algebra package in javascript,
-	-- how about that, we got google who never answers the phone, silentmatt, and enkimute all mashed up together, I should 
-	just shut up.
+	  This page records the tape of calculations.
 	</p>
       </section>
     `
   }
 }
 
-window.customElements.define('calculator-about', CalculatorAbout);
+window.customElements.define('calculator-tape', CalculatorTape);

@@ -15,7 +15,7 @@ import { connect } from 'pwa-helpers/connect-mixin.js';
 import { store } from '../store.js';
 import { calcInvert, calcRadDeg, calcInput, calcAC, calcCE, calcEval } from '../actions/calc.js';
 
-//import { Algebra } from './ganja.js';
+import { Algebra } from './ganja.js';
 import {Parser, Expression} from './expr-eval.js';
 const _parser = new Parser();
 
