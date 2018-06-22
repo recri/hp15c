@@ -11,6 +11,10 @@ import * as Gestures from '@polymer/polymer/lib/utils/gestures.js';
 
 import { SharedStyles } from './shared-styles.js';
 
+// attempt a raw import to see what happens
+// what happened is it failed to find Mat
+import './common/hp15c.js';
+
 const KeyCap = (code, label, hotkey) => ({ code, label, hotkey });
 
 const KeyCaps = (n, f, g) => ({ n, f, g });
