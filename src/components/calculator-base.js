@@ -9,6 +9,8 @@ import { PageViewElement } from './page-view-element.js';
 import { GestureEventListeners } from '@polymer/polymer/lib/mixins/gesture-event-listeners.js';
 import * as Gestures from '@polymer/polymer/lib/utils/gestures.js';
 
+import { calculatorMenuButton } from './calculator-menu-button.js'
+
 import { SharedStyles } from './shared-styles.js';
 
 import { connect } from 'pwa-helpers/connect-mixin.js';
@@ -691,13 +693,17 @@ ${computedStyles}
     div.txt{height:25%}		/* .cwtld */
     div.kpd{height:68%}		/* .cwbsc */
   }
+  calculator-menu-button {
+    position:absolute:
+    top:16px; left:16px;
+    display: block-inline;
+  }
 </style>
 <section>
   <div class="frm">			<!-- data-hveid="40" -->
     <div class="frm1" id="frm1i">	<!-- .vk_c .card-section, #cwmcwd -->
       <div class="frm11">		<!-- .cwmd -->
 	<div class="frm111">		<!-- .cwed -->
-
     <!-- memo bar -->
     <div class="mem">				<!-- .cwled -->
       <div id="mem1i"></div>			<!-- #cwfleb -->

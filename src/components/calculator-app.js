@@ -83,6 +83,7 @@ class CalculatorApp extends connect(store)(LitElement) {
       }
 
       app-header {
+        display: none;
         position: fixed;
         top: 0;
         left: 0;
@@ -143,7 +144,7 @@ class CalculatorApp extends connect(store)(LitElement) {
       }
 
       .main-content {
-        padding-top: 64px;
+        /* padding-top: 64px; */
         min-height: 100vh;
       }
 
@@ -156,6 +157,7 @@ class CalculatorApp extends connect(store)(LitElement) {
       }
 
       footer {
+        display:none;
         padding: 24px;
         background: var(--app-drawer-background-color);
         color: var(--app-drawer-text-color);
@@ -170,11 +172,11 @@ class CalculatorApp extends connect(store)(LitElement) {
         app-header,
         .main-content,
         footer {
-          margin-left: var(--app-drawer-width);
+          /* margin-left: var(--app-drawer-width); */
         }
 
         .menu-btn {
-          display: none;
+          /* display: none; */
         }
 
         [main-title] {
@@ -219,6 +221,12 @@ class CalculatorApp extends connect(store)(LitElement) {
       <calculator-view404 class="page" active?="${_page === 'view404'}"></calculator-view404>
     </main>
 
+    <!-- persistent menu button -->
+    <!-- fails when screen gets wider than content, menu button wanders leftward -->
+    <div style="position:absolute;top:0;left:0">
+        <button class="menu-btn" title="Menu" on-click="${_ => store.dispatch(updateDrawerState(true))}">${menuIcon}</button>
+    </div>
+
     <footer>
       <p>
 	<a href="https://elf.org/calculator" rel="noopener" target="_blank" title="home page">elf.org/calculator</a>
@@ -231,7 +239,7 @@ class CalculatorApp extends connect(store)(LitElement) {
     _firstRendered() {
 	installRouter((location) => store.dispatch(navigate(window.decodeURIComponent(location.pathname))));
 	installOfflineWatcher((offline) => store.dispatch(updateOffline(offline)));
-	installMediaQueryWatcher(`(min-width: 768px)`, (matches) => store.dispatch(updateLayout(matches)));
+	// installMediaQueryWatcher(`(min-width: 768px)`, (matches) => store.dispatch(updateLayout(matches)));
     }
 
     _didRender(properties, changeList) {
@@ -248,7 +256,7 @@ class CalculatorApp extends connect(store)(LitElement) {
     _stateChanged(state) {
 	this._page = state.app.page;
 	this._drawerOpened = state.app.drawerOpened;
-	this._wideLayout = state.app.wideLayout;
+	this._wideLayout = false; // state.app.wideLayout;
 	this._change = state.app.change;
 	this._install = state.app.install;
 	this._offline = state.app.offline;
