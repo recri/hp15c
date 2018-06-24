@@ -14,18 +14,18 @@ import { html } from '@polymer/lit-element';
 import { PageViewElement } from './page-view-element.js';
 import { SharedStyles } from './shared-styles.js';
 
-class CalculatorTape extends PageViewElement {
+class HP15C404 extends PageViewElement {
   _render(props) {
     return html`
       ${SharedStyles}
       <section>
-        <h2>Tape</h2>
-        <p>
-	  This page records the tape of calculations.
-	</p>
+        <h2>Oops! You hit a 404</h2>
+        <p>The page you're looking for doesn't seem to exist. Head back
+           <a href="/">home</a> and try again?
+        </p>
       </section>
     `
   }
 }
 
-window.customElements.define('calculator-tape', CalculatorTape);
+window.customElements.define('hp15c-404', HP15C404);

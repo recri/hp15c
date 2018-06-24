@@ -14,18 +14,21 @@ import { html } from '@polymer/lit-element';
 import { PageViewElement } from './page-view-element.js';
 import { SharedStyles } from './shared-styles.js';
 
-class ChangeView404 extends PageViewElement {
+class HP15CAbout extends PageViewElement {
   _render(props) {
     return html`
       ${SharedStyles}
       <section>
-        <h2>Oops! You hit a 404</h2>
-        <p>The page you're looking for doesn't seem to exist. Head back
-           <a href="/">home</a> and try again?
-        </p>
+        <h2>About</h2>
+        <p>
+	This app is a new front end for Greg Hewitt's <a href="http://hp15c.com">HP15C simulator</a>.
+	It is built as a Progressive Web App using tools from Google's 
+	<a href="https://polymer-project.org">Polymer Project</a>.
+	The source is available at <a href="https://github.com/recri/hp15c#readme">github</a>.
+	</p>
       </section>
     `
   }
 }
 
-window.customElements.define('change-view404', ChangeView404);
+window.customElements.define('hp15c-about', HP15CAbout);

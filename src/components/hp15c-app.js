@@ -18,8 +18,6 @@ import '@polymer/app-layout/app-scroll-effects/effects/waterfall.js';
 import '@polymer/app-layout/app-toolbar/app-toolbar.js';
 import { setPassiveTouchGestures } from '@polymer/polymer/lib/utils/settings.js';
 
-import { menuIcon } from './calculator-icons.js';
-import { CalculatorBase } from './calculator-base.js'; // non-lazy import for default page
 import { connect } from 'pwa-helpers/connect-mixin.js';
 import { installRouter } from 'pwa-helpers/router.js';
 import { installOfflineWatcher } from 'pwa-helpers/network.js';
@@ -29,9 +27,12 @@ import { updateMetadata } from 'pwa-helpers/metadata.js';
 import { store } from '../store.js';
 import { navigate, updateDrawerState, updateLayout, installPrompt, updateOffline } from '../actions/app.js';
 
+import { menuIcon } from './hp15c-icons.js';
+import { HP15CCalculator } from './hp15c-calculator.js'; // non-lazy import for default page
+
 import { SharedStyles } from './shared-styles.js';
 
-class CalculatorApp extends connect(store)(LitElement) {
+class HP15CApp extends connect(store)(LitElement) {
 
     static get properties() {
 	return {
@@ -272,4 +273,4 @@ class CalculatorApp extends connect(store)(LitElement) {
     }
 }
 
-window.customElements.define('calculator-app', CalculatorApp);
+window.customElements.define('hp15c-app', HP15CApp);
