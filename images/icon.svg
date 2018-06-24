@@ -1,0 +1,9 @@
+<svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    * { font: bold 30px courier; }
+  </style>
+  <rect x="0" y="0" width="25" height="50" stroke="black" fill="#c58720"></rect>
+  <rect x="25" y="0" width="25" height="50" stroke="black" fill="#479ea5"></rect>
+  <text x="12" y="25">f</text>
+  <text x="37" y="25">g</text>
+</svg>
