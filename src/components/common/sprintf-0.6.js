@@ -53,7 +53,7 @@ function str_repeat(i, m) {
 	return o.join('');
 }
 
-function sprintf() {
+export function sprintf() {
 	var i = 0, a, f = arguments[i++], o = [], m, p, c, x, s = '';
 	while (f) {
 		if (m = /^[^\x25]+/.exec(f)) {

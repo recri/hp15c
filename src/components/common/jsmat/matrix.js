@@ -2227,7 +2227,7 @@ function EigenvalueDecomposition(Arg) {
 }
 
 
-function Matrix() {
+export function Matrix() {
 
 /* ------------------------
    Class variables

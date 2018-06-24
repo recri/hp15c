@@ -1,0 +1,49 @@
+* The calculator image is 692x447 positioned at 0,0
+* the digit images are 20x30
+* the neg image is 12x3
+  neg is placed at top:80px;left:158px instead of occupying a full digit width
+* the decimal image is 6x4
+* the comma image is 6x10
+* the indicators are helvetica 10px located top:100px;left:190px-410px
+|------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------|
+| dig  |       |       |       |       |       |       |       |       |       |       |       |       |
+| top  |    80 |    67 |       |       |       |       |       |       |       |       |       |       |
+| dig  |     - |     0 |     1 |     2 |     3 |     4 |     5 |     6 |     7 |     8 |     9 |       |
+| left |   158 |   175 |   202 |   229 |   256 |   283 |   310 |   337 |   364 |   394 |   421 |   448 |
+| %    |    0% |  5.8% | 15.1% | 24.3% | 33.6% | 42.8% | 52.1% | 61.3% | 70.5% | 80.8% | 90.1% | 99.3% |
+| dec  |       |       |       |       |       |       |       |       |       |       |       |       |
+| top  |       |    91 |       |       |       |       |       |       |       |       |       |       |
+| left |       |   194 |   221 |   248 |   275 |   302 |   329 |   356 |   383 |   410 |   437 |       |
+| %    |       | 12.3% | 21.6% | 30.8% | 40.1% | 49.3% | 58.6% | 67.8% | 77.0% | 86.3% | 95.6% |       |
+| ind  |       |       |       |       |       |       |       |       |       |       |       |       |
+| top  |   100 |       |       |       |       |       |       |       |       |       |       |       |
+| ind  |  USER |     f |     g |  TRIG |     C |  PRGM |       |       |       |       |       |       |
+| left |   190 |   230 |   250 |   300 |   390 |   410 |       |       |       |       |       |       |
+| %    | 11.0% | 24.6% | 31.5% | 48.6% | 79.4% | 86.3% |       |       |       |       |       |       |
+|------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------|
+* So, if we use a full digit display for neg, then we have 11*27 = 297 = 43% of width
+  which starts from left:148 = 22% of calculator.
+  and each digit gets 1/11th of width, or 9.1%
+* Or, if we use the negative image, we have 12+10*27 = 292 = 42.2% of width
+  which starts from left:158 = 23% of calculator.
+  and each digit gets 9.2% of width
+* There appears to be about 10px of margin top and bottom
+* There are a few px of margin left and right
+  Ignore the margins, we can add them back afterwards
+* The neg image is different from the center bar of a digit
+  though the center bar of a digit is used for negative EEX
+* We have 30px of height in the digits, and 10px of indicators at 33px from top,
+  so there is 43px of height or 9.6% of image height
+* Go back and remeasure on the image 15.jpg
+* div.calc { left:37px; right:674px; top:25px; bottom:428px; width:637px; height:403px;
+  background-color: #322; }
+* div.bezel { left:58px; right:653px; top:30px; bottom:139px; width:595px; height:109px;
+  background-color: #f7f7f7; }
+  left: (58-37)/640
+* div.lcd { left:150px; right:451px; top:58px;bot:119px; width:301px; height:61px;
+  background-color: #878777; }
+* div.outline { left:62px; right:646px; top:152px; bot:412px; width:584px; height:260px
+  border-width: 3px 5px 10px 5px; /* top right bottom left */
+  border-style: solid;
+  border-color: #aaa; }
+* div.key { background-color: #333; }

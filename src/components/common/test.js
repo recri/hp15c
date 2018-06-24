@@ -1442,7 +1442,7 @@ function verify(test, result, resulti, expected) {
     }
 }
 
-function start_tests() {
+export function start_tests() {
     key('f'); key('7'); key('4');
     key('g'); key('5'); key('8');
     key('f'); key('r');

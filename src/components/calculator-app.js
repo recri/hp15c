@@ -60,7 +60,6 @@ class CalculatorApp extends connect(store)(LitElement) {
 	      html``;
 	
 	return html`
-    ${SharedStyles}
     <style>
       :host {
         --app-drawer-width: 256px;
@@ -205,6 +204,7 @@ class CalculatorApp extends connect(store)(LitElement) {
 	<a selected?="${_page === 'tests'}" href="/tests" title="Test the app.">Tests</a>
 	<a selected?="${_page === 'hp15c'}" href="/hp15c" title="HP15C Calculator.">HP15C</a>
 	<a selected?="${_page === 'about'}" href="/about" title="About the app.">About</a>
+        <a selected?="${_page === 'layout'}" href="/layout" title="Layout tests.">Layout</a>
 	${installPrompt}
       </nav>
     </app-drawer>
@@ -217,15 +217,19 @@ class CalculatorApp extends connect(store)(LitElement) {
       <calculator-tape class="page" active?="${_page === 'tape'}"></calculator-tape>
       <calculator-keys class="page" active?="${_page === 'keys'}"></calculator-keys>
       <calculator-tests class="page" active?="${_page === 'tests'}"></calculator-tests>
-      <hp15c-calculator class="page" active?="${_page === 'hp15c'}"></hp15c-caclulator>
+      <hp15c-calculator class="page" active?="${_page === 'hp15c'}"></hp15c-calculator>
+      <layout-test class="page" active?="${_page === 'layout'}">
+	<!-- put menu button here?  let the page place it? -->
+	<button class="delegated menu-btn" title="Menu" on-click="${_ => store.dispatch(updateDrawerState(true))}">${menuIcon}</button>
+      </layout-test>
       <calculator-view404 class="page" active?="${_page === 'view404'}"></calculator-view404>
     </main>
 
     <!-- persistent menu button -->
     <!-- fails when screen gets wider than content, menu button wanders leftward -->
-    <div style="position:absolute;top:0;left:0">
-        <button class="menu-btn" title="Menu" on-click="${_ => store.dispatch(updateDrawerState(true))}">${menuIcon}</button>
-    </div>
+    <!-- <div style="position:absolute;top:0;left:0">
+        <button class="managed menu-btn" title="Menu" on-click="${_ => store.dispatch(updateDrawerState(true))}">${menuIcon}</button>
+    </div> -->
 
     <footer>
       <p>
