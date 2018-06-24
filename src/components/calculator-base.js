@@ -700,6 +700,7 @@ ${computedStyles}
   }
 </style>
 <section>
+  <slot></slot>
   <div class="frm">			<!-- data-hveid="40" -->
     <div class="frm1" id="frm1i">	<!-- .vk_c .card-section, #cwmcwd -->
       <div class="frm11">		<!-- .cwmd -->

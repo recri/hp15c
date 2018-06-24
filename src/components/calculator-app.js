@@ -204,24 +204,23 @@ class CalculatorApp extends connect(store)(LitElement) {
 	<a selected?="${_page === 'tests'}" href="/tests" title="Test the app.">Tests</a>
 	<a selected?="${_page === 'hp15c'}" href="/hp15c" title="HP15C Calculator.">HP15C</a>
 	<a selected?="${_page === 'about'}" href="/about" title="About the app.">About</a>
-        <a selected?="${_page === 'layout'}" href="/layout" title="Layout tests.">Layout</a>
 	${installPrompt}
       </nav>
     </app-drawer>
 
     <!-- Main content -->
     <main class="main-content">
-      <calculator-base class="page" active?="${_page === 'base'}"></calculator-base>
+      <calculator-base class="page" active?="${_page === 'base'}">
+	<button class="delegated menu-btn" title="Menu" on-click="${_ => store.dispatch(updateDrawerState(true))}">${menuIcon}</button>
+      </calculator-base>
       <calculator-settings class="page" active?="${_page === 'settings'}"></calculator-settings>
       <calculator-about class="page" active?="${_page === 'about'}"></calculator-about>
       <calculator-tape class="page" active?="${_page === 'tape'}"></calculator-tape>
       <calculator-keys class="page" active?="${_page === 'keys'}"></calculator-keys>
       <calculator-tests class="page" active?="${_page === 'tests'}"></calculator-tests>
-      <hp15c-calculator class="page" active?="${_page === 'hp15c'}"></hp15c-calculator>
-      <layout-test class="page" active?="${_page === 'layout'}">
-	<!-- put menu button here?  let the page place it? -->
+      <hp15c-calculator class="page" active?="${_page === 'hp15c'}">
 	<button class="delegated menu-btn" title="Menu" on-click="${_ => store.dispatch(updateDrawerState(true))}">${menuIcon}</button>
-      </layout-test>
+      </hp15c-calculator>
       <calculator-view404 class="page" active?="${_page === 'view404'}"></calculator-view404>
     </main>
 

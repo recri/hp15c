@@ -43,7 +43,6 @@ const loadPage = (page) => async (dispatch) => {
     case 'keys': await import('../components/calculator-keys.js'); break;
     case 'tests': await import('../components/calculator-tests.js'); break;
     case 'hp15c': await import('../components/hp15c-calculator.js'); break;
-    case 'layout': await import('../components/layout-test.js'); break;
     default: await import('../components/calculator-view404.js'); break;
     }
     dispatch(updatePage(page));

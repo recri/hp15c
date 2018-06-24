@@ -1,4 +1,4 @@
-node_modules/
+node_modul*
 build/
 server/
 polymer-serve.log

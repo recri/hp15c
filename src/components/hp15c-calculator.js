@@ -1,23 +1,24 @@
-/**
+/*
 @license
 Copyright (c) 2018 Roger E Critchlow Jr.  All rights reserved.
-This code may only be used under the BSD style license found at http://recri.github.io/change/LICENSE.txt
+This code may only be used under the BSD style license found at 
+https://github.com/recri/calculator/blob/master/LICENSE.txt.
 */
-
-import { html } from '@polymer/lit-element';
+import { html, svg } from 'lit-html/lib/lit-extended.js'
 import { PageViewElement } from './page-view-element.js';
 import { GestureEventListeners } from '@polymer/polymer/lib/mixins/gesture-event-listeners.js';
 import * as Gestures from '@polymer/polymer/lib/utils/gestures.js';
 
 import { SharedStyles } from './shared-styles.js';
 
-// attempt a raw import to see what happens
-// what happened is it failed to find Matrix
-// added one export to common/jsmat/matrix.js
-// and one import to common/hp15c.js
-// and this loaded without complaint.
-
+import { connect } from 'pwa-helpers/connect-mixin.js';
+import { store } from '../store.js';
 import { key, init, start_tests } from './common/hp15c.js';
+
+import { 
+    hpUser, hpShift, hpTrigmode, hpComplex, hpProgram, hpNeg,
+    hpDigits, hpDecimals, hpDigit, hpDecimal
+} from '../actions/hp15c.js';
 
 const KeyCap = (label, hotkey) => ({ label, hotkey });
 
@@ -142,15 +143,17 @@ const keypad = [ [ // row 0
 ] ];
 var hotkeys = {};		// built in first constructor
 
-const _ignore = (e) => false;
+const _ignore = (e) => false;	// dummy event handler
 
-class HP15CCalculator extends GestureEventListeners(PageViewElement) {
+export class HP15CCalculator extends connect(store)(GestureEventListeners(PageViewElement)) {
     /* hack to get GestureEventListeners activated */
     constructor() {
 	super();
 	Gestures.addListener(this, 'tap', _ignore);
 	Gestures.addListener(this, 'down', _ignore);
 	Gestures.addListener(this, 'up', _ignore);
+	// map the hotkeys to the appropriate functions
+	// and set up the emitted codes for each kay
 	this.hotkey = {};
 	keypad.forEach(ai => ai.forEach(aij => ['n', 'f', 'g'].forEach(k => {
 	    if (aij[k]) {
@@ -161,21 +164,33 @@ class HP15CCalculator extends GestureEventListeners(PageViewElement) {
 			aij[k].hotkey.forEach(key => this.hotkey[key] = aij[k]);
 			aij[k].hotkey = aij[k].hotkey[0];
 		    }
+		    // the first hotkey is the primary code for the key
 		    aij[k].emit = aij[k].hotkey
 		} else {
+		    // keys without dedicated hotkeys
+		    // are activated by the shifted primary code
 		    aij[k].emit = aij.n.emit;
 		}
 	    }
 	    
 	})));
-	this._neg = ' ';
-	this._digit = '          '.split('');	// ten spaces
-	this._decimal = '          '.split(''); // ten spaces
-	this._shift = ' ';
-	this._complex = false;
-	this._trigmode = null;
-	this._prgm = false;
-	this._user = false;
+	this._shift = 'f';	// want to light up both, ah well
+	this._complex = true;
+	this._trigmode = 'GRAD';
+	this._prgm = true;
+	this._user = true;
+	this._neg = '-';
+	this._digits =   ['8','8','8','8','8','8','8','8','8','8'];
+	this._decimals = [',',',',',',',',',',',',',',',',',',','];
+	this.renderComplete.then(() => {
+	    /* arrange to monitor focus, keyboard, and touch events for everyone */
+	    this.shadowRoot.addEventListener('focus', e => this._onFocus(e), true);
+	    this.shadowRoot.addEventListener('blur', e => this._onBlur(e), true);
+	    this.shadowRoot.addEventListener('keydown', e => this._onDown(e));
+	    // this.shadowRoot.addEventListener('tap', e => this._onTap(e));
+	    /* hp15c related start up */
+	    init(this);
+	});
     }
     disconnectedCallback() {
 	super.disconnectedCallback();
@@ -185,49 +200,139 @@ class HP15CCalculator extends GestureEventListeners(PageViewElement) {
     }
     static get properties() {
 	return {
-	    _neg: String,
-	    _digit: Array,
-	    _decimal: Array,
-	    _shift: String, 
-	    _complex: Boolean,
+	    _user: Boolean,
+	    _shift: String,
 	    _trigmode: String,
-	    _prgm: Boolean,
-	    _user: Boolean
+	    _complex: Boolean,
+	    _program: Boolean,
+	    _neg: String,
+	    _digits: Array,
+	    _decimals: Array,
 	}
     }
+    _stateChanged(state) {
+	this._user = state.hp15c.user;
+	this._shift = state.hp15c.shift;
+	this._trigmode = state.hp15c.trigmode;
+	this._complex = state.hp15c.complex;
+	this._program = state.hp15c.program;
+	this._neg = state.hp15c.neg;
+	this._digits = state.hp15c.digits;
+	this._decimals = state.hp15c.decimals;
+    }
+    _render({_user, _shift, _trigmode, _complex, _program, _neg, _digits, _decimals}) {
+	// generate styles
+	const generateStyles = () => {
+	    const generateUser = () =>
+		  _user ? 
+		  html`<style>.indicator .user{display:inline}</style>` :
+		  html`<style>.indicator .user{display:none}</style>`;
+	    const generateShift = () =>
+		  _shift==='f' ? html`
+		<style>
+		  .indicator .fshift{display:inline}
+		  .indicator .gshift{display:none}
+		  span.btn.fshift{display:table-cell}
+		  span.btn.gshift{display:none}
+		  span.btn.nshift{display:none}
+		  #clearlabel{display:block}
+		</style>` :
+		  _shift==='g' ? html`
+		<style>
+		  .indicator .fshift{display:none}
+		  .indicator .gshift{display:inline}
+		  span.btn.fshift{display:none}
+		  span.btn.gshift{display:table-cell}
+		  span.btn.nshift{display:none}
+		  #clearlabel{display:none}
+		</style>` :
+		  html`
+		<style>
+		  .indicator .fshift{display:none}
+		  .indicator .gshift{display:none}
+		  span.btn.fshift{display:none}
+		  span.btn.gshift{display:none}
+		  span.btn.nshift{display:table-cell}
+		  #clearlabel{display:none}
+		</style>` ;
+	    const generateTrigmode = () =>
+		  _trigmode==='RAD' ? 
+		  html`<style>.indicator .rad{display:inline}.indicator .grad{display:none}</style>` :
+		  _trigmode==='GRAD' ? 
+		  html`<style>.indicator .rad{display:none}.indicator .grad{display:inline}</style>` :
+		  html`<style>.indicator .rad{display:none}.indicator .grad{display:none}</style>` ;
+	    const generateComplex = () =>
+		  _complex ? 
+		  html`<style>.indicator .complex{display:inline}</style>` :
+		  html`<style>.indicator .complex{display:none}</style>`;
+	    const generateProgram = () =>
+		  _program ? 
+		  html`<style>.indicator .program{display:inline}</style>` :
+		  html`<style>.indicator .program{display:none}</style>`;
+	    return html`
+		${generateUser()}
+		${generateShift()}
+		${generateTrigmode()}
+		${generateComplex()}
+		${generateProgram()}`;
+	}
 
-    _render({_neg, _digit, _decimal, _shift, _complex, _trigmode, _prgm, _user}) {
-	// quick constants
-	const [_fshift, _gshift] = [_shift === 'f', _shift === 'g']
-	// generate style
-	const generateStyle = () =>
-	      _fshift ? html`<style>span.btn.fshift{display:table-cell}span.btn.gshift{display:none}span.btn.nshift{display:none}</style>` :
-	      _gshift ? html`<style>span.btn.fshift{display:none}span.btn.gshift{display:table-cell}span.btn.nshift{display:none}</style>` :
-	                html`<style>span.btn.fshift{display:none}span.btn.gshift{display:none}span.btn.nshift{display:table-cell}</style>` ;
-	const computedStyles =
-	      html`${generateStyle()}`;
 	// generate display
-	// -8,8,8,8,8,8,8,8,8,8,
-	// USER f g BEGIN GRAD D.MY C PRGM
-	const display_digit = (d,i) =>
-	      html`${d}${_decimal[i]}`;
-	const display = () =>
-	      html`${_neg}${_digit.map((d,i) => display_digit(d,i))}`;
-	const display_flags = (u,f,g,b,t,d,c,p) =>
-	      html`<pre>${u}  ${f} ${g} ${t} </pre>`;
-	const flags = () =>
-	      display_flags( _user?'USER':'    ',
-			     _fshift?'f':' ',
-			     _gshift?'g':' ',
-			     '     ',		// BEGIN?
-			     _trigmode === 'GRAD' ? 'GRAD' : _trigmode === 'RAD' ? ' RAD' : '    ', 
-			     '    ',		// D.MY?
-			     ' ',		// C?
-			     _prgm?'PRGM':'    ');
+	const digits = [
+	    [' _ ','   ',' _ ',' _ ','   ',' _ ',' _ ',' _ ',' _ ',' _ ','   ',' _ ','   ',' _ ','   ',' _ ','   ','   ','   ','   '],
+	    ['| |','  |',' _|',' _|','|_|','|_ ','|_ ','  |','|_|','|_|',' _ ','|_|','|_ ','|  ',' _|','|_ ',' _ ',' _ ','|_|','   '],
+	    ['|_|','  |','|_ ',' _|','  |',' _|','|_|','  |','|_|',' _|','   ','| |','|_|','|_ ','|_|','|_ ','|_|','|  ','   ','   '],
+	]
+	const segments = [
+	    svg`<path class="top" d="M 3 1 L 17 1 13 5 7 5 Z" />`,
+	    svg`<path class="lup" d="M 2 3 L 6 7 6 10 2 14 Z" />`,
+	    svg`<path class="rup" d="M 18 3 L 18 14 14 10 14 7 Z" />`,
+	    svg`<path class="mid" d="M 6.5 12.5 L 13.5 12.5 16 14.5 13.5 16.5 6.5 16.5 4 14.5 Z" />`,
+	    svg`<path class="low" d="M 2 15 L 6 19 6 22 2 26 Z" />`,
+	    svg`<path class="row" d="M 18 15 L 18 26 14 22 14 19 Z" />`,
+	    svg`<path class="bot" d="M 3 28 L 17 28 13 24 7 24 Z" />`
+	];
+	const negsign = svg`<path class="neg" d="M 4 13 L 16 13 16 16 4 16 Z" />`;
+	const digit = (d) => {
+	    // a digit, or a letter, or a space
+	    let i = "0123456789-ABCDEoru ".indexOf(d);
+	    if (i < 0) {
+		console.log(`bad argument to digit ${d}`);
+		return svg``;
+	    }
+	    return svg`
+		${digits[0][i][1] === '_'?segments[0]:''} 
+		${digits[1][i][0] === '|'?segments[1]:''}${digits[1][i][2] === '|'?segments[2]:''}
+		${digits[1][i][1] === '_'?segments[3]:''}
+		${digits[2][i][0] === '|'?segments[4]:''}${digits[2][i][2] === '|'?segments[5]:''}
+		${digits[2][i][1] === '_'?segments[6]:''}`;
+
+	}
+	const decimal = (d) => {
+	    const head = svg`<rect x="2" width="4" height="4" />`;
+	    const tail = svg`<path class="comma" d="M 2 6 L 6 6 1 9 0 9" />`;
+	    return svg`${d !== ' '?head:''}${d === ','?tail:''}`;
+	}
+	const neg_digits_and_decimals = (neg, digits, decimals) => {
+	    const width = 11*27, height = 34;
+	    const digit_top = 0, decimal_top = 24;
+	    const digit_left = (i) => 17+i*27, decimal_left = (i) => 36+i*27;
+	    const skew_x = -10;
+	    const digit_and_decimal = (i) => {
+		return svg`<g transform$="translate(${digit_left(i)} ${digit_top})">${digit(digits?digits[i]:' ')}</g>
+			   <g transform$="translate(${decimal_left(i)} ${decimal_top})">${decimal(decimals?decimals[i]:' ')}</g>`;
+	    }
+	    return html`<svg id="digits" viewBox="0 0 287 34">
+			  <g transform="skewX(-5)">
+			    ${neg === '-'?negsign:''}
+			    ${digits.map((d,i) => digit_and_decimal(i))}
+			  </g>
+			</svg>`;
+	}
 	// generate keypad
 	const span = (aijk,i,j,k) => {
 	    if (! aijk) return html``;
-	    var {code, sclass, alabel, label} = aijk;
+	    var {sclass, alabel, label} = aijk;
 	    if ( ! sclass) sclass = '';
 	    const kclass = k ? `${k}shift` : '';
 	    return sclass && alabel ?
@@ -238,216 +343,115 @@ class HP15CCalculator extends GestureEventListeners(PageViewElement) {
 	}
 	const button = (r,c,side,k) => 
 	      k.f && k.g ?
-	      html`<div class$="col ${side} col-${c}"><div class="in-col">${['n','f','g'].map(t => span(k[t],r,c,t))}</div></div>` :
-	      html`<div class$="col ${side} col-${c}"><div class="in-col">${span(k.n,r,c,false)}</div></div>`
-	const lftGenerate = (r) => /* .cwbr */
-	      html`<div class$="row lft row-${r}">${[0,1,2,3,4].map(c => button(r,c,'lft',keypad[r][c]))}</div>`;
-	const rgtGenerate = (r) => /* .cwbr */
-	      html`<div class$="row rgt row-${r}">${[5,6,7,8,9].map(c => button(r,c,'rgt',keypad[r][c]))}</div>`;
+	      html`
+		<div class$="col ${side} col-${c}" on-tap=${_ => this._onEmit(k.n)}>
+		  <div class="in-col">${['n','f','g'].map(t => span(k[t],r,c,t))}</div>
+		</div>` :
+	      html`
+		<div class$="col ${side} col-${c}" on-tap=${_ => this._onEmit(k.n)}>
+		  <div class="in-col">${span(k.n,r,c,false)}</div>
+		</div>`;
+	const rowGenerate = (row, cols, side) =>
+	      html`<div class$="row ${side} row-${row}">${cols.map(col => button(row,col,side,keypad[row][col]))}</div>`;
 	return html`
-${SharedStyles}
-${computedStyles}
 <style>
   :host {
+    --key-bezel-background:#322;
+    --key-border-color:#aaa;
+    --lcd-bezel-background:#f7f7f7;
+    --lcd-panel-background:#878777;
+    --lcd-panel-color:#456;
     --fshift-color: #c58720; /* goldenrod?; */
     --gshift-color: #479ea5; /* lightblue?; */
-    --darker-background: #302b31;
-    --darker-color: #444;
-    --darker-border: 1px solid #c6c6c6;
-    --lighter-background: #f5f5f5;
-    --lighter-color: #444;
-    --lighter-border: 1px solid #dedede;
-    --highlight-background: #4d90fe;
-    --highlight-color: #fefefe;
-    --highlight-border: 1px solid #2f5bb7;
-    --highlight-font-weight: bold;
+    --key-cap-color: #fff;
+    --key-cap-background: #302b31;
   }
-  /* enclosing frame */
-  div.frm { /* data-hveid="40" */
-    width:600px;
-    height:354px;
-    position: relative;
+  .calc { 
+    position:relative; 
+    width:100%; /* 640px; */
+    height:62.5vw; /* 400px; */
+    background-color:var(--key-bezel-background);
   }
-  div.frm1 { /* .vk_c ... */
-    padding: 20px 16px 24px 16px;
-    margin-left: -16px;
-    margin-right: -16px;
-    min-height:72px;
-    line-height:1;
-    background-color: black;
-    position: relative;
-    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08);
-    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08);
+  .bezel {
+    position:absolute;
+    top: 1.25%;
+    left: 3.3%;
+    width: 93.5%;
+    height: 27.5%;
+    background-color:var(--lcd-bezel-background);
   }
-  div.frm11 { /* .cwmd */
-    -moz-user-select: -moz-none;
-    -webkit-user-select: none;
-    -ms-user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    height: 310px;
-    position: relative;
+  .slot {
+    position:absolute;
+    top:0;
+    left:0;
+    height:100%;
   }
-  div.frm111 { /* .cwed */
-    width: 100%;
-    height: 100%;
-    direction: ltr;
+  .lcd {
+    position:absolute;
+    top:25.4%;
+    left:15.5%;
+    height:56%;
+    width:50%;
+    background-color:var(--lcd-panel-background);
   }
-  /* text entry */
-  div.txt { /* .cwtld */
-    width: 100%;
-    height: 27%;
-    display: block;
-    position: relative;
-  }
-  div.txt sup { /* .cwtld sup */
-    position:relative;
-    bottom:.4em;
-    font-size:75%;
-    vertical-align:baseline
-  }
-  div.txt1 { /* .cwtlb */
-    -moz-border-radius: 1.1px;
-    -webkit-border-radius: 1.1px;
-    border-radius: 1.1px;
-    background-color: none;
-    border: 1px solid #d9d9d9;
-    border-top: 1px solid #c0c0c0;
-    color: #333;
-    height: 75%;
-    left: 15%;
-    position: absolute;
-    top: 12.5%;
-    width: 50%;
-  }
-  div.txt1.hovered.focused, div.txt1.focused { /* .cwtlbh.cwtlbs,.cwtlbs */
-    -moz-box-shadow:inset 0 1px 2px rgba(0,0,0,0.3);
-    -webkit-box-shadow:inset 0 1px 2px rgba(0,0,0,0.3);
-    box-shadow:inset 0 1px 2px rgba(0,0,0,0.3);
-    border:1px solid #4d90fe
-  }
-  div.txt1.hovered { /* .cwtlbh */
-    -moz-box-shadow:inset 0 1px 2px rgba(0,0,0,0.1);
-    -webkit-box-shadow:inset 0 1px 2px rgba(0,0,0,0.1);
-    box-shadow:inset 0 1px 2px rgba(0,0,0,0.1);
-    border:1px solid #b9b9b9;
-    border-top:1px solid #a0a0a0
-  }
-  div#txt1i { /* #cwtlbb */
-  }
-  div.txt3 { /* .cwtltbl */
-    transition: height .2s;
-    -moz-transition: height .2s;
-    -o-transition: height .2s;
-    -webkit-transition: height .2s;
-    color: #222;
-    display: table;
-    top: 12.5%;
-    left: 15%;
-    height: 75%;
-    width: 50%;
-    background-color: white;
-    position: absolute;
-    table-layout: fixed;
-    z-index: 0;
-  }
-  div#txt3i { /* #cwotbl */
-  }
-  div#txt31i { /* #cwtltblr */
-    display: table-row;
-  }
-  div#txt31i:focus { /* #cwtltblr */
-    outline: none;
-  }
-  div.txt311 { /* .cwtlptc */
-    display: table-cell;
-    vertical-align: middle;
-    width: 2.5%;
-  }
-  div.txt312 { /* .cwtlotc */
-    display: table-cell;
-    overflow: hidden;
-    padding-right: 2%;
-    vertical-align: baseline;
-    width: 95%;
-  }
-  div.txt3121, div.txt3122 {
-    display: block;
+  .lcd svg { fill:var(--lcd-panel-color); }
+  .indicator {
+    position:absolute;
+    top:75%;
+    left:0;
     width:100%;
-    vertical-align: middle;
-  }
-  div.txt3121 {
-    top: 20%;
-    height:75%;
-  }
-  div.txt3122 {
-    top: 55%;
     height:25%;
+    font-size:10px;		/* at 640px overall width */
+    background-color:transparent;
+    color:var(--lcd-panel-color);
   }
-  div.txt3121 span { /* .cwcot */
-    -moz-user-select: text;
-    -webkit-user-select: text;
-    -ms-user-select: text;
-    float: left;
-    /* font-family: Roboto-Regular,helvetica,arial,sans-serif; */
-    font-size: 30px;
-    font-weight: lighter;
-    white-space: nowrap;
+  .indicator .user { position:absolute; top:0; left:11%; display:none; }
+  .indicator .fshift { position:absolute; top:0; left:24.6%; display:none; }
+  .indicator .gshift { position:absolute; top:0; left:31.5%; display:none; }
+  .indicator .rad { position:absolute; top:0; left:58%; display:none; }
+  .indicator .grad { position:absolute; top:0; left:55%; display:none; }
+  .indicator .complex { position:absolute; top:0; left:79.4%; display:none; }
+  .indicator .program { position:absolute; top:0; left:86.3%; display:none; }
+  .keypad {
+    position:absolute;
+    top:30%;
+    left:3.5%;
+    height:65%;
+    width:92%;
+    border-style:solid;
+    border-width:3px 5px 10px 5px;
+    border-color:var(--key-border-color);
   }
-  div.txt3122 span { /* _future */
-    float: left;
-    /* font-family: Roboto-Regular,helvetica,arial,sans-serif; */
-    font-size: 10px;
-    font-weight: lighter;
-    white-space: nowrap;
-  }
-  span#txt3121i { /* #cwos */
-  }
-
   /* keypad */
   div.kpd { /* .cwbsc */
-    bottom: 0;
-    height: 72%;
     position: absolute;
-    width: 100%;
-    z-index: 2;
+    top:0;
+    left:0;
+    height:100%;    
+    width:100%;
     background-color: black;
   }
   /* left and right sides of keypad */
-  div.side { /* .cwcd */
+  div.side {
     display: inline-block;
     height:100%;
     overflow:hidden;
     position:absolute;
   }
-  div.lft.side { /* .cwcd .cwsbc */
-    width:50%; /* N columns change */
-    left:0;
-  }
-  div.rgt.side { /* .cwcd .cwbbc */
-    width:50%; /* N columns change */
-    left:50%;
-  }
+  /* N columns changes this width% */
+  div.lft.side { width:50%; left:0; }
+  /* N columns changes this width% */
+  div.rgt.side { width:50%; left:50%; }
   /* rows */
-  div.row { /* .cwbr */
-    display: block;
-    height: 25%;		/* N rows change */
-    position: relative;
-  }
+  /* N rows changes this height% */
+  div.row { display: block; height: 25%; position: relative; }
   /* columns and cells */
-  div.col { /* .cwbd */
-    display: inline-block;
-    height:100%;
-    position: absolute;
-    vertical-align: bottom;
-  }
-  div.lft.col { /* .cwsbc-c */
-    width:20%;		/* N columns change */
-   }
-  div.rgt.col { /* .cwbbc-c */
-    width:20%;
-  }
+  div.col { display: inline-block; height:100%; position: absolute; vertical-align: bottom; }
+  /* N columns changes this width% */
+  div.lft.col { width:20%; }
+  div.rgt.col { width:20%; }
   /* inner column */
-  div.in-col { 
+  div.in-col {
     width: 84%;
     height: 65%;
     top: 17%;
@@ -483,21 +487,22 @@ ${computedStyles}
     display: table-cell;
     vertical-align: middle;
   }
-  div.col-0 { left:0%; }	/* cwsbc1 */ /* N columns change */
-  div.col-1 { left:20%; }	/* cwsbc2 */
-  div.col-2 { left:40%; }	/* cwsbc3 */
-  div.col-3 { left:60%; }	/* cwbbc1 */
-  div.col-4 { left:80%; }	/* cwbbc2 */
-  div.col-5 { left:0%; }	/* cwbbc3 */
-  div.col-6 { left:20%; }	/* cwbbc4 */
-  div.col-7 { left:40%; }	/* cwbbc4 */
-  div.col-8 { left:60%; }	/* cwbbc4 */
-  div.col-9 { left:80%; }	/* cwbbc4 */
+  /* N columns changes these left% */
+  div.col-0 { left: 0%; }
+  div.col-1 { left:20%; }
+  div.col-2 { left:40%; }
+  div.col-3 { left:60%; }
+  div.col-4 { left:80%; }
+  div.col-5 { left: 0%; }
+  div.col-6 { left:20%; }
+  div.col-7 { left:40%; }
+  div.col-8 { left:60%; }
+  div.col-9 { left:80%; }
 
   /* unshifted button labels */
   div.in-col span { 
-    background-color: var(--darker-background);
-    color: white;
+    background-color: var(--key-cap-background);
+    color: var(--key-cap-color);
     font-size: 14px;
   }
 
@@ -548,6 +553,32 @@ ${computedStyles}
     display:none
   }
 
+  div#clearlabel {
+    position:absolute;
+    left:20%;
+    top:47.5%;
+    width:80%;
+    height:5%;
+    color:var(--fshift-color);
+    background-color:var(--key-bezel-color);
+    font-size:10px;
+  }
+  div#clearlabel span { 
+    display:block-inline;
+    position:absolute;
+    top:0;
+    left:37.5%;
+    width:25%;
+    text-align:center;
+  }
+  div#clearlabel svg {
+    position:absolute;
+    left:0;
+    top:0;
+    width:100%;
+    height:100%;
+    stroke:var(--fshift-color);
+  }
   @media screen and (max-width:459px){
     div.frm { width:100% }
     div.lft.side{display:none} /* .cwsbcm? */
@@ -564,117 +595,106 @@ ${computedStyles}
     div.kpd{height:68%}		/* .cwbsc */
   }
 </style>
+${SharedStyles}
+${generateStyles()}
 <section>
-  <div class="frm">			<!-- data-hveid="40" -->
-    <div class="frm1" id="frm1i">	<!-- .vk_c .card-section, #cwmcwd -->
-      <div class="frm11">		<!-- .cwmd -->
-	<div class="frm111">		<!-- .cwed -->
-
-    <!-- expression accumulator -->
-    <div class="txt">				<!-- .cwtld -->
-      <div class="txt1" id="txt1i"></div>	<!-- .cwtlb, #cwtlbb -->
-      <div class="txt3" id="txt3i">		<!-- .cwtltbl, #cwotbl -->
-	<div aria-level="3" id="txt31i" role="heading" tabindex="0"> <!-- #cwtltblr -->
-	  <div class="txt311"></div>		<!-- .cwtlptc -->
-	  <div class="txt312">			<!-- .cwtlotc -->
-            <div class="txt3121"><span>${display()}</span></div> <!-- .cwcot, #cwos -->
-	    <div class="txt3122"><span>${flags()}</span></div>
-	  </div>
-	  <div class="txt311"></div>		<!-- .cwtlptc -->
+  <div class="calc">
+    <div class="bezel">
+      <div class="slot"><slot></slot></div>
+      <div class="lcd" id="lcd" tabindex="0">
+	<div class="digit">
+	  ${neg_digits_and_decimals(_neg, _digits, _decimals)}
+	</div>
+	<div class="indicator">
+	  <span class="user">USER</span>
+	  <span class="fshift">f</span>
+	  <span class="gshift">g</span>
+	  <span class="rad"> RAD</span>
+	  <span class="grad">GRAD</span>
+	  <span class="complex">C</span>
+	  <span class="program">PRGM</span>
 	</div>
       </div>
     </div>
-
-    <div class="wrp">
-      <div class="kpd">		<!-- .cwbsc -->
-        <div class="lft side">	<!-- .cwcd .cwsbc -->
-          ${[0,1,2,3].map(r => lftGenerate(r))} <!-- N rows change -->
-        </div>
-        <div class="rgt side">
-          ${[0,1,2,3].map(r => rgtGenerate(r))} <!-- N rows change -->
-        </div>
-      </div>
-    </div>
-
+    <div class="keypad">
+      <div class="kpd">
+	<div class="lft side">
+	  ${[0,1,2,3].map(row => rowGenerate(row,[0,1,2,3,4],'lft'))}
+	  <div id="clearlabel" class="fshift">
+	    <svg viewBox="0 0 100 20" preserveAspectRatio="none">
+	      <polyline stroke-width="2" points="0,20 0,10 37.5,10" />
+	      <polyline stroke-width="2" points="62.5,10 100,10 100,20" />
+	    </svg>
+	    <span>CLEAR</span>
+          </div>
+	</div>
+	<div class="rgt side">
+	  ${[0,1,2,3].map(row => rowGenerate(row,[5,6,7,8,9],'rgt'))}
 	</div>
       </div>
     </div>
   </div>
-  <div><button on-tap=${e => start_tests()}>Start Tests</button></div>
 </section>`;
     }
 
-    _didRender() {
+    // after each render, but most especially after the first
+    _didRender(properties, changed, previous) {
 	if ( ! this.focused) {
-	    /* arrange to adjust the classes of an enclosing div when
-	     * the text entry div gets hovered or focused */
-	    const div31 = this.shadowRoot.getElementById('txt31i');
-	    const div1 = this.shadowRoot.getElementById('txt1i');
-	    div31.addEventListener('focus', _ => div1.classList.add('focused'));
-	    div31.addEventListener('blur', _ => div1.classList.remove('focused'));
-	    div31.addEventListener('mouseover', _ => div1.classList.add('hovered'));
-	    div31.addEventListener('mouseout', _ => div1.classList.remove('hovered'));
-	    /* arrange to monitor focus, keyboard, and touch events for everyone */
-	    this.shadowRoot.addEventListener('focus', e => this._onFocus(e), true);
-	    this.shadowRoot.addEventListener('blur', e => this._onBlur(e), true);
-	    this.shadowRoot.addEventListener('keydown', e => this._onDown(e));
-	    this.shadowRoot.addEventListener('tap', e => this._onTap(e));
-	    /* and grab the focus on load, too. */
-	    div31.focus();
-	    /* hp15c related start up */
-	    init(this);
-	    /* mark us as done */
-	    this.focused = true;
+	    /* and grab the focus on load, too, whenever. */
+	    const lcd = this.shadowRoot.getElementById('lcd');
+	    if (lcd) {
+		lcd.focus();
+		this.focused = true;
+	    }
 	}
     }
+    
     // hp15c Display interface
     clear_digits() { 
-	this._neg = ' ';
-	for (let i = 0; i < 10; i += 1) {
-	    this._digit[i] = ' ';
-	    this._decimal[i] = ' ';
-	}
-	this._requestRender();
+	store.dispatch(hpNeg(' '));
+	store.dispatch(hpDigits([' ',' ',' ',' ',' ',' ',' ',' ',' ',' ']));
+	store.dispatch(hpDecimals([' ',' ',' ',' ',' ',' ',' ',' ',' ',' ']));
     }
-    set_neg() { this._neg = '-'; }
-    clear_digit(i) { this._digit[i] = ' '; this._requestRender(); }
-    set_digit(i, d) { this._digit[i] = d; this._requestRender(); }
-    set_comma(i) { this._decimal[i] = ','; this._requestRender(); }
-    set_decimal(i) { this._decimal[i] = '.'; this._requestRender(); }
-    clear_shift() { this._shift = ' '; }
-    set_shift(mode) { this._shift = mode; } // mode in ['f', 'g']
-    set_prgm(on) { this._prgm = on; } // on in [true, false]
-    set_trigmode(mode) { this._trigmode = mode; } // mode in [null, 'RAD', 'GRAD']
-    set_user(on) { this._user = on; } // on in [true, false]
-    set_complex(on) { this._complex = on; }
+    set_neg() { store.dispatch(hpNeg('-')); }
+    clear_digit(i) { this.set_digit(i, ' '); }
+    set_digit(i, d) { store.dispatch(hpDigit(this._digits, i, d)); }
+    set_comma(i) { store.dispatch(hpDecimal(this._decimals, i, ',')); }
+    set_decimal(i) { store.dispatch(hpDecimal(this._decimals, i, '.')); } 
+    clear_shift() { this.set_shift(' '); }
+    set_shift(mode) { store.dispatch(hpShift(mode)); } // mode in ['f', 'g', ' ']
+    set_prgm(on) { store.dispatch(hpProgram(on)); } // on in [true, false]
+    set_trigmode(mode) { store.dispatch(hpTrigmode(mode)); } // mode in [null, 'RAD', 'GRAD']
+    set_user(on) { store.dispatch(hpUser(on)); } // on in [true, false]
+    set_complex(on) { store.dispatch(hpComplex(on)); }
     // included tests.js inside hp15c.js and exported start_tests()
     run_test() { start_tests(); }
 
     // event listeners
-    _onFocus(event) {
-	// console.log(`onFocus(${event.target.className})`);
-	this._focusee = event.target;
-	// if (this._focusee.aij) console.log(`onFocus(${this._focusee.aij})`);
-    }
-    _onBlur(event) {
-	// console.log(`onBlur(${event.target.className})`);
-	this._focusee = null;
-    }
+    _onFocus(event) { this._focusee = event.target; }
+    _onBlur(event) { this._focusee = null; }
     _onTap(event) { 
 	if (event.target.aijk) {
 	    this._onEmit(event.target.aijk);
 	    event.preventDefault();
 	    return;
 	}
-	if (event.target.parentElement) {
-	    if (event.target.parentElement.aijk) {
-		console.log('found aijk on parent');
-		this._onEmit(event.target.parentElement.aijk);
-		event.preventDefault();
-		return;
-	    }
-	    console.log(`_onTap(${event.target.tagName}.${event.target.className}) has no aijk property`);
+	switch (event.target.className) {
+	case 'calc':
+	case 'bezel':
+	case 'slot':
+	case 'lcd': 
+	case 'digit':
+	case 'indicator':
+	case 'keypad':
+	case 'kpd':
+	case 'lft side':
+	case 'rgt side':
+	case 'row lft row-0': case 'row lft row-1': case 'row lft row-2': case 'row lft row-3':
+	case 'row rgt row-0': case 'row rgt row-1': case 'row rgt row-2': case 'row rgt row-3':
+	    break;
+	default:
 	    for (let t = event.target; t.parentElement; t = t.parentElement) {
+		console.log(`search ${t.tagName} class ${t.className} for aijk`);
 		if (t.aijk) {
 		    console.log('found aijk on ancestor');
 		    this._onEmit(t.aijk);
@@ -682,13 +702,23 @@ ${computedStyles}
 		    return;
 		}
 	    }
+	    for (let t = event.target; t.firstElementChild; t = t.firstElementChild) {
+		console.log(`search ${t.tagName} class ${t.className} for aijk`);
+		if (t.aijk) {
+		    console.log('found aijk on descendent');
+		    this._onEmit(t.aijk);
+		    event.preventDefault();
+		    return;
+		}
+	    }
+	    console.log(`_onTap(${event.target.tagName}.${event.target.className}) has no aijk property`);
 	}
     }
     _onDown(event) { 
 	/* 
 	   don't even get me started, String.fromCharCode(event.which) converts to upper case 
 	   on the Lenovo bluetooth keyboard which has upper case key caps, the chromebook
-	   has lower case key caps, so it has lower case event.which.
+	   has lower case key caps, so it has lower case event.which codes.
 	*/
 	let key = event.key;
 	if (event.altKey || event.metaKey) return false;
@@ -721,6 +751,9 @@ ${computedStyles}
 	// console.log(`_onEmit('${aijk.label}')`);
 	if ( ! aijk) {
 	    throw new Error("aijk is undefined in emit");
+	}
+	if ( ! aijk.emit) {
+	    throw new Error("aijk.emit is undefined in emit");
 	}
 	key(aijk.emit);
     }
