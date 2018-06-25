@@ -13,7 +13,7 @@ import { store } from '../store.js';
 
 const hp15c = (state = { 
     user: false,
-    shift: ' ',
+    shift: 'f',
     trigmode: null,
     complex: false,
     program: false,

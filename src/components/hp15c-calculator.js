@@ -9,8 +9,6 @@ import { PageViewElement } from './page-view-element.js';
 import { GestureEventListeners } from '@polymer/polymer/lib/mixins/gesture-event-listeners.js';
 import * as Gestures from '@polymer/polymer/lib/utils/gestures.js';
 
-import { SharedStyles } from './shared-styles.js';
-
 import { connect } from 'pwa-helpers/connect-mixin.js';
 import { store } from '../store.js';
 
@@ -175,7 +173,7 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	    }
 	    
 	})));
-	// initialize properties
+	// initialize properties, mostly overwritten by redux
 	this._shift = 'f';	// want to light up both, ah well
 	this._complex = true;
 	this._trigmode = 'GRAD';
@@ -218,35 +216,47 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	}
     }
     _updateIndicator(sel, on) {
-	// const generateUser = () =>
-	// _user ? 
-	// html`<style>.indicator .user{display:inline}</style>` :
-	// html`<style>.indicator .user{display:none}</style>`;
-	// const generateComplex = () =>
-	//	  _complex ? 
-	//	  html`<style>.indicator .complex{display:inline}</style>` :
-	//	  html`<style>.indicator .complex{display:none}</style>`;
-	//  const generateProgram = () =>
-	//	  _program ? 
-	//	  html`<style>.indicator .program{display:inline}</style>` :
-	//	  html`<style>.indicator .program{display:none}</style>`;
 	if (this.shadowRoot) {
-	    console.log(`_updateIndicator(${sel}, ${on})`);
+	    // console.log(`_updateIndicator(${sel}, ${on})`);
 	    const ind = this.shadowRoot.querySelector(sel);
 	    if (ind) {
-		console.log(`found ${ind.tagName} ${ind.className}`);
+		// console.log(`found ${ind.tagName} ${ind.className}`);
 		ind.style.display = on ? 'inline' : 'none';
 	    }
 	}
     }
     _updateShift(shift) {
 	if (this.shadowRoot) {
-	    console.log(`updateShift('${shift}')`);
+	    // console.log(`updateShift('${shift}')`);
+	    const indf = this.shadowRoot.querySelector('.indicator .fshift');
+	    const indg = this.shadowRoot.querySelector('.indicator .gshift');
+	    const clab = this.shadowRoot.querySelectorAll('.clearlabel');
+	    const fshb = this.shadowRoot.querySelectorAll('.btn.fshift');
+	    const gshb = this.shadowRoot.querySelectorAll('.btn.gshift');
+	    const nshb = this.shadowRoot.querySelectorAll('.btn.nshift');
+	    const [indf_d, indg_d, clab_d, fshb_d, gshb_d, nshb_d] =
+		  shift === 'f' ? [ 'inline', 'none', 'block', 'table-cell', 'none', 'none' ] :
+		  shift === 'g' ? [ 'none', 'inline', 'none', 'none', 'table-cell', 'none' ] :
+		  [ 'none', 'none', 'none', 'none', 'none', 'table-cell' ];
+	    if (indf) indf.style.display = indf_d;
+	    if (indg) indg.style.display = indg_d;
+	    if (clab) clab.forEach(b => b.style.display = clab_d);
+	    if (fshb) fshb.forEach(b => b.style.display = fshb_d);
+	    if (gshb) gshb.forEach(b => b.style.display = gshb_d);
+	    if (nshb) nshb.forEach(b => b.style.display = nshb_d);
 	}
     }
     _updateTrigmode(mode) {
 	if (this.shadowRoot) {
-	    console.log(`updateTrigmode('${mode}')`);
+	    // console.log(`updateTrigmode('${mode}')`);
+	    const rad = this.shadowRoot.querySelector('.rad');
+	    const grad = this.shadowRoot.querySelector('.grad');
+	    const [rad_display, grad_display] = 
+		  mode === 'RAD' ? ['inline','none'] :
+		  mode === 'GRAD' ? ['none','inline'] :
+		  ['none','none'];
+	    if (rad) rad.style.display = rad_display;
+	    if (grad) grad.style.display = grad_display;
 	}
     }
     _updateNeg(neg) {
@@ -260,8 +270,43 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	}
     }
     _updateDigit(i, digit) {
+	// compute a list of lit and unlit segments for a given digit/letter/space 
+	const digits = [
+	    [' _ ','   ',' _ ',' _ ','   ',' _ ',' _ ',' _ ',' _ ',' _ ','   ',' _ ','   ',' _ ','   ',' _ ','   ','   ','   ','   '],
+	    ['| |','  |',' _|',' _|','|_|','|_ ','|_ ','  |','|_|','|_|',' _ ','|_|','|_ ','|  ',' _|','|_ ',' _ ',' _ ','|_|','   '],
+	    ['|_|','  |','|_ ',' _|','  |',' _|','|_|','  |','|_|',' _|','   ','| |','|_|','|_ ','|_|','|_ ','|_|','|  ','   ','   '],
+	]
+	const digit_segments = (d) => {
+	    // a digit, or a letter, or a space
+	    let i = "0123456789-ABCDEoru ".indexOf(d);
+	    if (i < 0) {
+		console.log(`bad argument to digit_segments ${d}`);
+		return null;
+	    }
+	    return [ digits[0][i][1] === '_',
+		     digits[1][i][0] === '|',
+		     digits[1][i][2] === '|',
+		     digits[1][i][1] === '_',
+		     digits[2][i][0] === '|',
+		     digits[2][i][2] === '|',
+		     digits[2][i][1] === '_' ];
+	}
+	
 	if (this.shadowRoot) {
-	    console.log(`updateDigit(${i}, '${digit}')`);
+	    // console.log(`updateDigit(${i}, '${digit}')`);
+	    const lit = digit_segments(digit)
+	    if (lit) {
+		const dig = this.shadowRoot.querySelector(`#dig${i}`)
+		if (dig) {
+		    // console.log('found #dig${i}');
+		    let i = 0;
+		    for (let e = dig.firstElementChild; e; e = e.nextElementSibling) {
+			// console.log(`found ${e.tagName} ${e.className.baseVal}`)
+			e.setAttribute('visibility', lit[i] ? 'visible' : 'hidden');
+			i += 1;
+		    }
+		}
+	    }
 	}
     }
     _updateDecimal(i, decimal) {
@@ -312,87 +357,24 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	    this._decimals = state.hp15c.decimals;
 	}
     }
-    _render({_user, _shift, _trigmode, _complex, _program, _neg, _digits, _decimals}) {
-	// generate styles
-	const generateStyles = () => {
-	    const generateShift = () =>
-		  _shift==='f' ? html`
-		<style>
-		  .indicator .fshift{display:inline}
-		  .indicator .gshift{display:none}
-		  span.btn.fshift{display:table-cell}
-		  span.btn.gshift{display:none}
-		  span.btn.nshift{display:none}
-		  #clearlabel{display:block}
-		</style>` :
-		  _shift==='g' ? html`
-		<style>
-		  .indicator .fshift{display:none}
-		  .indicator .gshift{display:inline}
-		  span.btn.fshift{display:none}
-		  span.btn.gshift{display:table-cell}
-		  span.btn.nshift{display:none}
-		  #clearlabel{display:none}
-		</style>` :
-		  html`
-		<style>
-		  .indicator .fshift{display:none}
-		  .indicator .gshift{display:none}
-		  span.btn.fshift{display:none}
-		  span.btn.gshift{display:none}
-		  span.btn.nshift{display:table-cell}
-		  #clearlabel{display:none}
-		</style>` ;
-	    const generateTrigmode = () =>
-		  _trigmode==='RAD' ? 
-		  html`<style>.indicator .rad{display:inline}.indicator .grad{display:none}</style>` :
-		  _trigmode==='GRAD' ? 
-		  html`<style>.indicator .rad{display:none}.indicator .grad{display:inline}</style>` :
-		  html`<style>.indicator .rad{display:none}.indicator .grad{display:none}</style>` ;
-	    return html`
-		${generateShift()}
-		${generateTrigmode()}`;
-	}
-
-	// generate display
-	const digits = [
-	    [' _ ','   ',' _ ',' _ ','   ',' _ ',' _ ',' _ ',' _ ',' _ ','   ',' _ ','   ',' _ ','   ',' _ ','   ','   ','   ','   '],
-	    ['| |','  |',' _|',' _|','|_|','|_ ','|_ ','  |','|_|','|_|',' _ ','|_|','|_ ','|  ',' _|','|_ ',' _ ',' _ ','|_|','   '],
-	    ['|_|','  |','|_ ',' _|','  |',' _|','|_|','  |','|_|',' _|','   ','| |','|_|','|_ ','|_|','|_ ','|_|','|  ','   ','   '],
-	]
-	const segments = [
-	    // 7 segments of the digit display
-	    svg`<path class="s0" d="M 3 1 L 17 1 13 5 7 5 Z" />`,
-	    svg`<path class="s1" d="M 2 3 L 6 7 6 10 2 14 Z" />`,
-	    svg`<path class="s2" d="M 18 3 L 18 14 14 10 14 7 Z" />`,
-	    svg`<path class="s3" d="M 6.5 12.5 L 13.5 12.5 16 14.5 13.5 16.5 6.5 16.5 4 14.5 Z" />`,
-	    svg`<path class="s4" d="M 2 15 L 6 19 6 22 2 26 Z" />`,
-	    svg`<path class="s5" d="M 18 15 L 18 26 14 22 14 19 Z" />`,
-	    svg`<path class="s6" d="M 3 28 L 17 28 13 24 7 24 Z" />`,
-	];
-	const digit = (d) => {
-	    // a digit, or a letter, or a space
-	    let i = "0123456789-ABCDEoru ".indexOf(d);
-	    if (i < 0) {
-		console.log(`bad argument to digit ${d}`);
-		return svg``;
-	    }
-	    return svg`
-		${digits[0][i][1] === '_'?segments[0]:''} 
-		${digits[1][i][0] === '|'?segments[1]:''}${digits[1][i][2] === '|'?segments[2]:''}
-		${digits[1][i][1] === '_'?segments[3]:''}
-		${digits[2][i][0] === '|'?segments[4]:''}${digits[2][i][2] === '|'?segments[5]:''}
-		${digits[2][i][1] === '_'?segments[6]:''}`;
-	}
-	
-	const neg_digits_and_decimals = (neg, digits, decimals) => {
+    _render(props) {
+	// sign, numbers, decimal points, and commas
+	// all segments are generated once in svg
+	// visibility is modified in stateChanged
+	// when the values change
+	const numeric_display = () => {
 	    const width = 11*27, height = 34;
 	    const digit_top = 0, decimal_top = 24;
 	    const digit_left = (i) => 17+i*27, decimal_left = (i) => 36+i*27;
-	    const skew_x = -10;
 	    const digit_and_decimal = (i) => {
 		return svg`<g id$="dig${i}" transform$="translate(${digit_left(i)} ${digit_top})">
-			     ${digit(digits?digits[i]:' ')}
+			     <path class="s0" d="M 3 1 L 17 1 13 5 7 5 Z" />
+			     <path class="s1" d="M 2 3 L 6 7 6 10 2 14 Z" />
+			     <path class="s2" d="M 18 3 L 18 14 14 10 14 7 Z" />
+			     <path class="s3" d="M 6.5 12.5 L 13.5 12.5 16 14.5 13.5 16.5 6.5 16.5 4 14.5 Z" />
+			     <path class="s4" d="M 2 15 L 6 19 6 22 2 26 Z" />
+			     <path class="s5" d="M 18 15 L 18 26 14 22 14 19 Z" />
+			     <path class="s6" d="M 3 28 L 17 28 13 24 7 24 Z" />
 			   </g>
 			   <g id$="dec${i}" transform$="translate(${decimal_left(i)} ${decimal_top})">
 			     <rect class="s0" x="2" width="4" height="4" />
@@ -402,10 +384,11 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	    return html`<svg id="digits" viewBox="0 0 287 34">
 			  <g transform="skewX(-5)">
 			    <path class="neg" d="M 4 13 L 16 13 16 16 4 16 Z" />
-			    ${digits.map((d,i) => digit_and_decimal(i))}
+			    ${[0,1,2,3,4,5,6,7,8,9].map((d,i) => digit_and_decimal(i))}
 			  </g>
 			</svg>`;
 	}
+
 	// generate keypad
 	const span = (aijk,i,j,k) => {
 	    if (! aijk) return html``;
@@ -430,6 +413,8 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 		</div>`;
 	const rowGenerate = (row, cols, side) =>
 	      html`<div class$="row ${side} row-${row}">${cols.map(col => button(row,col,side,keypad[row][col]))}</div>`;
+
+	// console.log('render called')
 	return html`
 <style>
   :host {
@@ -446,7 +431,7 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
   .calc { 
     position:relative; 
     width:100%; /* 640px; */
-    height:62.5vw; /* 400px; */
+    height:95vh; /* 400px; */
     background-color:var(--key-bezel-background);
   }
   .bezel {
@@ -465,30 +450,31 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
   }
   .lcd {
     position:absolute;
-    top:25.4%;
-    left:15.5%;
-    height:56%;
-    width:50%;
+    top:25.4%;left:15.5%;height:56%;width:50%;
     background-color:var(--lcd-panel-background);
   }
   .lcd svg { fill:var(--lcd-panel-color); }
+  .digit {
+    position:absolute;
+    top:5%;left:0;width:100%;
+  }
   .indicator {
     position:absolute;
-    top:75%;
+    top:65%;
     left:0;
     width:100%;
     height:25%;
-    font-size:10px;		/* at 640px overall width */
+    font-size:16px;		/* at 640px overall width */
     background-color:transparent;
     color:var(--lcd-panel-color);
   }
-  .indicator .user { position:absolute; top:0; left:11%; display:inline; }
-  .indicator .fshift { position:absolute; top:0; left:24.6%; display:inline; }
-  .indicator .gshift { position:absolute; top:0; left:31.5%; display:inline; }
-  .indicator .rad { position:absolute; top:0; left:58%; display:inline; }
-  .indicator .grad { position:absolute; top:0; left:55%; display:inline; }
-  .indicator .complex { position:absolute; top:0; left:79.4%; display:inline; }
-  .indicator .program { position:absolute; top:0; left:86.3%; display:inline; }
+  .indicator .user { position:absolute; top:0; left:11%; display:none; }
+  .indicator .fshift { position:absolute; top:0; left:24.6%; display:none; }
+  .indicator .gshift { position:absolute; top:0; left:31.5%; display:none; }
+  .indicator .rad { position:absolute; top:0; left:58%; display:none; }
+  .indicator .grad { position:absolute; top:0; left:55%; display:none; }
+  .indicator .complex { position:absolute; top:0; left:79.4%; display:none; }
+  .indicator .program { position:absolute; top:0; left:86.3%; display:none; }
   .keypad {
     position:absolute;
     top:30%;
@@ -515,18 +501,14 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     overflow:hidden;
     position:absolute;
   }
-  /* N columns changes this width% */
   div.lft.side { width:50%; left:0; }
-  /* N columns changes this width% */
   div.rgt.side { width:50%; left:50%; }
+  div.btm.side { height:50%; top:50%; }
   /* rows */
   /* N rows changes this height% */
   div.row { display: block; height: 25%; position: relative; }
   /* columns and cells */
-  div.col { display: inline-block; height:100%; position: absolute; vertical-align: bottom; }
-  /* N columns changes this width% */
-  div.lft.col { width:20%; }
-  div.rgt.col { width:20%; }
+  div.col { display: inline-block; height:100%; width:20%; position: absolute; vertical-align: bottom; }
   /* inner column */
   div.in-col {
     width: 84%;
@@ -564,6 +546,10 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     display: table-cell;
     vertical-align: middle;
   }
+  span.btn.nshfit { display:table-cell }
+  span.btn.fshift { display:none }
+  span.btn.gshift { display:none }
+
   /* N columns changes these left% */
   div.col-0 { left: 0%; }
   div.col-1 { left:20%; }
@@ -630,7 +616,7 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     display:none
   }
 
-  div#clearlabel {
+  div.clearlabel {
     position:absolute;
     left:20%;
     top:47.5%;
@@ -639,8 +625,9 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     color:var(--fshift-color);
     background-color:var(--key-bezel-color);
     font-size:10px;
+    display:none;
   }
-  div#clearlabel span { 
+  div.clearlabel span { 
     display:block-inline;
     position:absolute;
     top:0;
@@ -648,7 +635,7 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     width:25%;
     text-align:center;
   }
-  div#clearlabel svg {
+  div.clearlabel svg {
     position:absolute;
     left:0;
     top:0;
@@ -656,31 +643,35 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     height:100%;
     stroke:var(--fshift-color);
   }
+
+  /* narrow */
   @media screen and (max-width:459px){
-    div.frm { width:100% }
-    div.lft.side{display:none} /* .cwsbcm? */
-    div.rgt.side{left:0%;width:100%} /* .cwbbcm? */
-    div.txt1{left:2%;width:96%} /* .cwtlb */
+    div.bezel{top:1%;height:18%;}
+    div.lcd{top:25%;left:15%;height:50%;width:80%;}
+    /* make the lcd occupy more space */
+    div.keypad{top:20%;height:75%;}
+    div.lft.side{display:none;}
+    div.rgt.side{left:0;top:0;width:100%;height:50%;}
+    div.btm.side{display:inline-block;left:0;top:50%;width:100%;height:50%;}
   }
-  @media screen and (min-width:460px) and (max-height:450px){
-    div.frm(width:100%)
-    div.lft.side{width:50%}	/* .cwsbcm? */
-    div.rgt.side{left:50%;width:50%}	/* .cwbbcm>? */
-    div.txt1{left:1%;width:98%}	/* .cwtlb */
-    div.frm11{height:230px}	/* .cwmd */
-    div.txt{height:32%}		/* .cwtld */
-    div.kpd{height:68%}		/* .cwbsc */
-  }
+
+  /* wide */
+  @media screen and (min-width:460px){
+    div.bezel{top:1.25%;height:27.5%}
+    div.lcd{top:25%;left:15%;height:50%;width:50%;}
+    div.keypad{top:30%;height:65%}
+    div.lft.side{display:block-inline;left:0;top:0;width:50%;height:100%;}
+    div.rgt.side{left:50%;top:0;width:50%;height:100%}
+    div.btm.side{display:none;}
+ }
 </style>
-${SharedStyles}
-${generateStyles()}
 <section>
   <div class="calc">
     <div class="bezel">
       <div class="slot"><slot></slot></div>
       <div class="lcd" id="lcd" tabindex="0">
 	<div class="digit">
-	  ${neg_digits_and_decimals(_neg, _digits, _decimals)}
+	  ${numeric_display()}
 	</div>
 	<div class="indicator">
 	  <span class="user">USER</span>
@@ -697,7 +688,7 @@ ${generateStyles()}
       <div class="kpd">
 	<div class="lft side">
 	  ${[0,1,2,3].map(row => rowGenerate(row,[0,1,2,3,4],'lft'))}
-	  <div id="clearlabel" class="fshift">
+	  <div class="fshift clearlabel">
 	    <svg viewBox="0 0 100 20" preserveAspectRatio="none">
 	      <polyline stroke-width="2" points="0,20 0,10 37.5,10" />
 	      <polyline stroke-width="2" points="62.5,10 100,10 100,20" />
@@ -708,6 +699,17 @@ ${generateStyles()}
 	<div class="rgt side">
 	  ${[0,1,2,3].map(row => rowGenerate(row,[5,6,7,8,9],'rgt'))}
 	</div>
+	<div class="btm side">
+	  ${[0,1,2,3].map(row => rowGenerate(row,[0,1,2,3,4],'btm'))}
+	  <div class="fshift clearlabel">
+	    <svg viewBox="0 0 100 20" preserveAspectRatio="none">
+	      <polyline stroke-width="2" points="0,20 0,10 37.5,10" />
+	      <polyline stroke-width="2" points="62.5,10 100,10 100,20" />
+	    </svg>
+	    <span>CLEAR</span>
+          </div>
+	</div>
+
       </div>
     </div>
   </div>
@@ -759,14 +761,11 @@ ${generateStyles()}
     
     // hp15c Display interface
     clear_digits() { 
-	console.log('clear_digits');
 	store.dispatch(hpNeg(' '));
 	store.dispatch(hpDigits([' ',' ',' ',' ',' ',' ',' ',' ',' ',' ']));
 	store.dispatch(hpDecimals([' ',' ',' ',' ',' ',' ',' ',' ',' ',' ']));
     }
-    set_neg() { 
-	console.log('set_neg');
-	store.dispatch(hpNeg('-')); }
+    set_neg() { store.dispatch(hpNeg('-')); }
     clear_digit(i) { this.set_digit(i, ' '); }
     set_digit(i, d) { store.dispatch(hpDigit(this._digits, i, d)); }
     set_comma(i) { store.dispatch(hpDecimal(this._decimals, i, ',')); }

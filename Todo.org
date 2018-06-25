@@ -1,9 +1,9 @@
 [x] New todo list for hp15c alone, 2018-06-24
-[ ] adjust the lcd panel placement of digits
-[ ] adjust the lcd panel placement of indicators
+[x] adjust the lcd panel placement of digits
+[x] adjust the lcd panel placement of indicators
 [ ] adjust the lcd indicator font
 [ ] figure out how to adjust fonts as the calculator resizes
-[ ] get rid of the 600px limit and figure out what to do instead.
+[x] get rid of the 600px limit and figure out what to do instead.
 [ ] figure out how to keep the menubutton with the about page.
 [ ] figure out the adaptive break for portrait mode on phones
 	keep the core 4x5 keypad
@@ -28,9 +28,9 @@
 	cap label by some mindless transformation,
 	the key definitions are stored under the identifier,
 	the key layouts are simply arrays of identifiers.
-[ ] the adaptive layout with overlay shifts produces multiple
+[x] the adaptive layout with overlay shifts produces multiple
 	layouts containing the same keys in the same and/or
-	different locations.
+	different locations.  Wide and Narrow for now.
 [ ] research accessability and calculators some more.  Add back
 	the aria-lablel's to the keys.
 [ ] make a separate calculator page with testing enabled, use
@@ -52,3 +52,9 @@
 	according to whether the segment is needed to draw the
 	desired digit or decimal.  7 segments per digit, 2 per
 	decimal, 10 positions, and the negative sign.
+[ ] some of the arrow symbols are missing on my Android phone.
+	finding a webfont link for a math friendly font is getting
+	frustrating.
+[x] rewrote all display updating to not require any render, it
+	all happens in the updateState, but there are still some
+	render's slipping through.
