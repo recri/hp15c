@@ -18,14 +18,22 @@ class HP15CAbout extends PageViewElement {
   _render(props) {
     return html`
       ${SharedStyles}
+      <style>
+	.slot{position:absolute;top:16px;left:16px}
+      </style>
       <section>
         <h2>About</h2>
         <p>
-	This app is a new front end for Greg Hewitt's <a href="http://hp15c.com">HP15C simulator</a>.
+	This app is a new front end for Greg Hewitt's 
+	<a target="_blank" href="http://hp15c.com">HP15C simulator</a>.
 	It is built as a Progressive Web App using tools from Google's 
-	<a href="https://polymer-project.org">Polymer Project</a>.
-	The source is available at <a href="https://github.com/recri/hp15c#readme">github</a>.
+	<a target="_blank" href="https://polymer-project.org">Polymer Project</a>.
+	The source is available at <a target="_blank" href="https://github.com/recri/hp15c#readme">github</a>.
+	The manual for the hp 15c is available from 
+	<a target="_blank" href="http://www.hp.com/ctg/Manual/c03030589.pdf">Hewlitt Packard</a>,
+	but be aware that it is a 288 page pdf.
 	</p>
+	<div class="slot"><slot></slot></div>
       </section>
     `
   }

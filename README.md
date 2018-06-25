@@ -1,9 +1,7 @@
 
-This a progressive web app that computes expressions.
+This a progressive web app that simulates the venerable HP 15C calculator.
 
-Home page for this project is https://elf.org/calculator.
-
-The app is available as https://calculator.elf.org.
+The app is available as https://hp15c.elf.org.
 
 Built with the https://github.com/Polymer/pwa-starter-kit using https://polymer-project.org.
 
@@ -20,12 +18,3 @@ To build build, run "npm run build" in the top-level directory
 to make static images in build/ and a prpl-server suite of images
 in server/ for differential serving.
 
-The calculator layout is stolen from the calculator inlined when you
-google "calculator".  It's got some cute parts that I haven't reproduced
-as yet
-
-In addition the calculator implements computations on Clifford geometric
-algebras as implemented by
-<a href="https://github.com/enkimute/ganja.js/wiki">ganja.js</a>, though
-I've restrained myself to implementing the Euclidean 2 and 3 dimensional
-algebras since I find them least confusing.

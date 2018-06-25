@@ -1,7 +1,7 @@
 {
-  "name": "Calculator",
-  "short_name": "Calc",
-  "description": "Calculator",
+  "name": "HP15C Calculator",
+  "short_name": "HP15C",
+  "description": "HP15C Calculator Simulation",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#3f51b5",

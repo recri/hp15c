@@ -63,7 +63,7 @@ class HP15CApp extends connect(store)(LitElement) {
 	return html`
     <style>
       :host {
-        --app-drawer-width: 256px;
+        --app-drawer-width: 192px;
         display: block;
 
         --app-primary-color: #E91E63;
@@ -198,12 +198,7 @@ class HP15CApp extends connect(store)(LitElement) {
     <app-drawer opened="${_drawerOpened}" persistent="${_wideLayout}"
         on-opened-changed="${e => store.dispatch(updateDrawerState(e.target.opened))}">
       <nav class="drawer-list">
-	<a selected?="${_page === 'base'}" href="/" title="Calculator">Calculator</a>
-	<a selected?="${_page === 'settings'}" href="/settings" title="Change the settings.">Settings</a>
-	<a selected?="${_page === 'tape'}" href="/tape" title="Review the tape of computations.">Tape</a>
-	<a selected?="${_page === 'keys'}" href="/keys" title="Keyboard accelerator table.">Keys</a>
-	<a selected?="${_page === 'tests'}" href="/tests" title="Test the app.">Tests</a>
-	<a selected?="${_page === 'hp15c'}" href="/hp15c" title="HP15C Calculator.">HP15C</a>
+	<a selected?="${_page === 'hp15c'}" href="/" title="Calculator">Calculator</a>
 	<a selected?="${_page === 'about'}" href="/about" title="About the app.">About</a>
 	${installPrompt}
       </nav>
@@ -211,25 +206,14 @@ class HP15CApp extends connect(store)(LitElement) {
 
     <!-- Main content -->
     <main class="main-content">
-      <calculator-base class="page" active?="${_page === 'base'}">
-	<button class="delegated menu-btn" title="Menu" on-click="${_ => store.dispatch(updateDrawerState(true))}">${menuIcon}</button>
-      </calculator-base>
-      <calculator-settings class="page" active?="${_page === 'settings'}"></calculator-settings>
-      <calculator-about class="page" active?="${_page === 'about'}"></calculator-about>
-      <calculator-tape class="page" active?="${_page === 'tape'}"></calculator-tape>
-      <calculator-keys class="page" active?="${_page === 'keys'}"></calculator-keys>
-      <calculator-tests class="page" active?="${_page === 'tests'}"></calculator-tests>
       <hp15c-calculator class="page" active?="${_page === 'hp15c'}">
 	<button class="delegated menu-btn" title="Menu" on-click="${_ => store.dispatch(updateDrawerState(true))}">${menuIcon}</button>
       </hp15c-calculator>
-      <calculator-view404 class="page" active?="${_page === 'view404'}"></calculator-view404>
+      <hp15c-about class="page" active?="${_page === 'about'}">
+	<button class="delegated menu-btn" title="Menu" on-click="${_ => store.dispatch(updateDrawerState(true))}">${menuIcon}</button>
+      </hp15c-about>
+      <hp15c-404 class="page" active?="${_page === '404'}"></hp15c-404>
     </main>
-
-    <!-- persistent menu button -->
-    <!-- fails when screen gets wider than content, menu button wanders leftward -->
-    <!-- <div style="position:absolute;top:0;left:0">
-        <button class="managed menu-btn" title="Menu" on-click="${_ => store.dispatch(updateDrawerState(true))}">${menuIcon}</button>
-    </div> -->
 
     <footer>
       <p>

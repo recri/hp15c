@@ -1,6 +1,6 @@
 {
   "entrypoint": "index.html",
-  "shell": "src/components/calculator-app.js",
+  "shell": "src/components/hp15c-app.js",
   "sources": [
     "images/**/*"
   ],
@@ -67,3 +67,4 @@
   "moduleResolution": "node",
   "npm": true
 }
+

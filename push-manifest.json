@@ -1,10 +1,6 @@
 {
   "/": {
-    "src/components/calculator-app.js": {
-      "type": "script",
-      "weight": 1
-    },
-    "src/components/calculator-base.js": {
+    "src/components/hp15c-app.js": {
       "type": "script",
       "weight": 1
     },
