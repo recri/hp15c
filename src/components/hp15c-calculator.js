@@ -13,11 +13,12 @@ import { SharedStyles } from './shared-styles.js';
 
 import { connect } from 'pwa-helpers/connect-mixin.js';
 import { store } from '../store.js';
+
 import { key, init } from './common/hp15c.js';
 
 import { 
     hpUser, hpShift, hpTrigmode, hpComplex, hpProgram, hpNeg,
-    hpDigits, hpDecimals, hpDigit, hpDecimal, hpEmit
+    hpDigits, hpDecimals, hpDigit, hpDecimal
 } from '../actions/hp15c.js';
 
 const KeyCap = (label, hotkey) => ({ label, hotkey });
@@ -214,27 +215,106 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	    _neg: String,
 	    _digits: Array,
 	    _decimals: Array,
-	    _emit: String,
+	}
+    }
+    _updateIndicator(sel, on) {
+	// const generateUser = () =>
+	// _user ? 
+	// html`<style>.indicator .user{display:inline}</style>` :
+	// html`<style>.indicator .user{display:none}</style>`;
+	// const generateComplex = () =>
+	//	  _complex ? 
+	//	  html`<style>.indicator .complex{display:inline}</style>` :
+	//	  html`<style>.indicator .complex{display:none}</style>`;
+	//  const generateProgram = () =>
+	//	  _program ? 
+	//	  html`<style>.indicator .program{display:inline}</style>` :
+	//	  html`<style>.indicator .program{display:none}</style>`;
+	if (this.shadowRoot) {
+	    console.log(`_updateIndicator(${sel}, ${on})`);
+	    const ind = this.shadowRoot.querySelector(sel);
+	    if (ind) {
+		console.log(`found ${ind.tagName} ${ind.className}`);
+		ind.style.display = on ? 'inline' : 'none';
+	    }
+	}
+    }
+    _updateShift(shift) {
+	if (this.shadowRoot) {
+	    console.log(`updateShift('${shift}')`);
+	}
+    }
+    _updateTrigmode(mode) {
+	if (this.shadowRoot) {
+	    console.log(`updateTrigmode('${mode}')`);
+	}
+    }
+    _updateNeg(neg) {
+	if (this.shadowRoot) {
+	    // console.log(`updateNeg('${neg}')`);
+	    const sign = this.shadowRoot.querySelector('.neg');
+	    if (sign) {
+		// console.log(`found neg ${sign.tagName} ${sign.className}`);
+		sign.setAttribute('visibility', neg === '-' ? 'visible' : 'hidden');
+	    }
+	}
+    }
+    _updateDigit(i, digit) {
+	if (this.shadowRoot) {
+	    console.log(`updateDigit(${i}, '${digit}')`);
+	}
+    }
+    _updateDecimal(i, decimal) {
+	if (this.shadowRoot) {
+	    // console.log(`updateDecimal(${i}, '${decimal}')`);
+	    const dec = this.shadowRoot.getElementById(`dec${i}`)
+	    if (dec) {
+		// console.log(`found decimal[${i}] ${dec.tagName}`)
+		const c = dec.firstElementChild;
+		if (c) {
+		    // console.log(`first child ${c.tagName} ${c.className}`)
+		    const s = c.nextElementSibling
+		    if (s) {
+			// console.log(`sibling ${s.tagName} ${s.className}`);
+			c.style.display = decimal !== ' ' ? 'inline' : 'none';
+			s.style.display = decimal === ',' ? 'inline' : 'none';
+			// console.log(`updateDecimal(${i}, '${decimal}') is done`);
+		    }
+		}
+	    }
 	}
     }
     _stateChanged(state) {
-	this._user = state.hp15c.user;
-	this._shift = state.hp15c.shift;
-	this._trigmode = state.hp15c.trigmode;
-	this._complex = state.hp15c.complex;
-	this._program = state.hp15c.program;
-	this._neg = state.hp15c.neg;
-	this._digits = state.hp15c.digits;
-	this._decimals = state.hp15c.decimals;
-	this._emit = state.hp15c.emit;
+	if (this._user !== state.hp15c.user)
+	    this._updateIndicator('.user', this._user = state.hp15c.user);
+	if (this._shift !== state.hp15c.shift)
+	    this._updateShift(this._shift = state.hp15c.shift);
+	if (this._trigmode !== state.hp15c.trigmode)
+	    this._updateTrigmode(this._trigmode = state.hp15c.trigmode);
+	if (this._complex !== state.hp15c.complex)
+	    this._updateIndicator(".complex", this._complex = state.hp15c.complex)
+	if (this._program !== state.hp15c.program)
+	    this._updateIndicator(".program", this._program = state.hp15c.program);
+	if (this._neg !== state.hp15c.neg)
+	    this._updateNeg(this._neg = state.hp15c.neg);
+	if (this._digits !== state.hp15c.digits) {
+	    if (state.hp15c.digits && this._digits)
+		state.hp15c.digits.forEach((d,i) => d !== this._digits[i] ? this._updateDigit(i, d) : true);
+	    else if (state.hp15c.digits)
+		state.hp15c.digits.forEach((d,i) => this._updateDigit(i, d));
+	    this._digits = state.hp15c.digits;
+	}
+	if (this._decimals != state.hp15c.decimals) {
+	    if (state.hp15c.decimals && this._decimals)
+		state.hp15c.decimals.forEach((d,i) => d != this._decimals[i] ? this._updateDecimal(i, d) : true);
+	    else if (state.hp15c.decimals)
+		state.hp15c.decimals.forEach((d,i) => this._updateDecimal(i, d))
+	    this._decimals = state.hp15c.decimals;
+	}
     }
-    _render({_user, _shift, _trigmode, _complex, _program, _neg, _digits, _decimals, _emit}) {
+    _render({_user, _shift, _trigmode, _complex, _program, _neg, _digits, _decimals}) {
 	// generate styles
 	const generateStyles = () => {
-	    const generateUser = () =>
-		  _user ? 
-		  html`<style>.indicator .user{display:inline}</style>` :
-		  html`<style>.indicator .user{display:none}</style>`;
 	    const generateShift = () =>
 		  _shift==='f' ? html`
 		<style>
@@ -269,20 +349,9 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 		  _trigmode==='GRAD' ? 
 		  html`<style>.indicator .rad{display:none}.indicator .grad{display:inline}</style>` :
 		  html`<style>.indicator .rad{display:none}.indicator .grad{display:none}</style>` ;
-	    const generateComplex = () =>
-		  _complex ? 
-		  html`<style>.indicator .complex{display:inline}</style>` :
-		  html`<style>.indicator .complex{display:none}</style>`;
-	    const generateProgram = () =>
-		  _program ? 
-		  html`<style>.indicator .program{display:inline}</style>` :
-		  html`<style>.indicator .program{display:none}</style>`;
 	    return html`
-		${generateUser()}
 		${generateShift()}
-		${generateTrigmode()}
-		${generateComplex()}
-		${generateProgram()}`;
+		${generateTrigmode()}`;
 	}
 
 	// generate display
@@ -292,15 +361,15 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	    ['|_|','  |','|_ ',' _|','  |',' _|','|_|','  |','|_|',' _|','   ','| |','|_|','|_ ','|_|','|_ ','|_|','|  ','   ','   '],
 	]
 	const segments = [
-	    svg`<path class="top" d="M 3 1 L 17 1 13 5 7 5 Z" />`,
-	    svg`<path class="lup" d="M 2 3 L 6 7 6 10 2 14 Z" />`,
-	    svg`<path class="rup" d="M 18 3 L 18 14 14 10 14 7 Z" />`,
-	    svg`<path class="mid" d="M 6.5 12.5 L 13.5 12.5 16 14.5 13.5 16.5 6.5 16.5 4 14.5 Z" />`,
-	    svg`<path class="low" d="M 2 15 L 6 19 6 22 2 26 Z" />`,
-	    svg`<path class="row" d="M 18 15 L 18 26 14 22 14 19 Z" />`,
-	    svg`<path class="bot" d="M 3 28 L 17 28 13 24 7 24 Z" />`
+	    // 7 segments of the digit display
+	    svg`<path class="s0" d="M 3 1 L 17 1 13 5 7 5 Z" />`,
+	    svg`<path class="s1" d="M 2 3 L 6 7 6 10 2 14 Z" />`,
+	    svg`<path class="s2" d="M 18 3 L 18 14 14 10 14 7 Z" />`,
+	    svg`<path class="s3" d="M 6.5 12.5 L 13.5 12.5 16 14.5 13.5 16.5 6.5 16.5 4 14.5 Z" />`,
+	    svg`<path class="s4" d="M 2 15 L 6 19 6 22 2 26 Z" />`,
+	    svg`<path class="s5" d="M 18 15 L 18 26 14 22 14 19 Z" />`,
+	    svg`<path class="s6" d="M 3 28 L 17 28 13 24 7 24 Z" />`,
 	];
-	const negsign = svg`<path class="neg" d="M 4 13 L 16 13 16 16 4 16 Z" />`;
 	const digit = (d) => {
 	    // a digit, or a letter, or a space
 	    let i = "0123456789-ABCDEoru ".indexOf(d);
@@ -314,25 +383,25 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 		${digits[1][i][1] === '_'?segments[3]:''}
 		${digits[2][i][0] === '|'?segments[4]:''}${digits[2][i][2] === '|'?segments[5]:''}
 		${digits[2][i][1] === '_'?segments[6]:''}`;
-
 	}
-	const decimal = (d) => {
-	    const head = svg`<rect x="2" width="4" height="4" />`;
-	    const tail = svg`<path class="comma" d="M 2 6 L 6 6 1 9 0 9" />`;
-	    return svg`${d !== ' '?head:''}${d === ','?tail:''}`;
-	}
+	
 	const neg_digits_and_decimals = (neg, digits, decimals) => {
 	    const width = 11*27, height = 34;
 	    const digit_top = 0, decimal_top = 24;
 	    const digit_left = (i) => 17+i*27, decimal_left = (i) => 36+i*27;
 	    const skew_x = -10;
 	    const digit_and_decimal = (i) => {
-		return svg`<g transform$="translate(${digit_left(i)} ${digit_top})">${digit(digits?digits[i]:' ')}</g>
-			   <g transform$="translate(${decimal_left(i)} ${decimal_top})">${decimal(decimals?decimals[i]:' ')}</g>`;
+		return svg`<g id$="dig${i}" transform$="translate(${digit_left(i)} ${digit_top})">
+			     ${digit(digits?digits[i]:' ')}
+			   </g>
+			   <g id$="dec${i}" transform$="translate(${decimal_left(i)} ${decimal_top})">
+			     <rect class="s0" x="2" width="4" height="4" />
+			     <path class="s1" d="M 2 6 L 6 6 1 9 0 9" />
+			   </g>`;
 	    }
 	    return html`<svg id="digits" viewBox="0 0 287 34">
 			  <g transform="skewX(-5)">
-			    ${neg === '-'?negsign:''}
+			    <path class="neg" d="M 4 13 L 16 13 16 16 4 16 Z" />
 			    ${digits.map((d,i) => digit_and_decimal(i))}
 			  </g>
 			</svg>`;
@@ -413,13 +482,13 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     background-color:transparent;
     color:var(--lcd-panel-color);
   }
-  .indicator .user { position:absolute; top:0; left:11%; display:none; }
-  .indicator .fshift { position:absolute; top:0; left:24.6%; display:none; }
-  .indicator .gshift { position:absolute; top:0; left:31.5%; display:none; }
-  .indicator .rad { position:absolute; top:0; left:58%; display:none; }
-  .indicator .grad { position:absolute; top:0; left:55%; display:none; }
-  .indicator .complex { position:absolute; top:0; left:79.4%; display:none; }
-  .indicator .program { position:absolute; top:0; left:86.3%; display:none; }
+  .indicator .user { position:absolute; top:0; left:11%; display:inline; }
+  .indicator .fshift { position:absolute; top:0; left:24.6%; display:inline; }
+  .indicator .gshift { position:absolute; top:0; left:31.5%; display:inline; }
+  .indicator .rad { position:absolute; top:0; left:58%; display:inline; }
+  .indicator .grad { position:absolute; top:0; left:55%; display:inline; }
+  .indicator .complex { position:absolute; top:0; left:79.4%; display:inline; }
+  .indicator .program { position:absolute; top:0; left:86.3%; display:inline; }
   .keypad {
     position:absolute;
     top:30%;
@@ -667,11 +736,6 @@ ${generateStyles()}
 	    case '_program':
 		render = true;
 		continue;
-	    case '_emit':
-		// the problem with this is that it will cause property changes
-		// perhaps we should both key() and hpEmit() in _onEmit()
-		console.log(`_shouldRender[${this.shouldRenderCount}]: ${p} has changed from ${previous[p]} to ${changed[p]}`)
-		continue;
 	    case 'active':
 		continue;
 	    default:
@@ -695,11 +759,14 @@ ${generateStyles()}
     
     // hp15c Display interface
     clear_digits() { 
+	console.log('clear_digits');
 	store.dispatch(hpNeg(' '));
 	store.dispatch(hpDigits([' ',' ',' ',' ',' ',' ',' ',' ',' ',' ']));
 	store.dispatch(hpDecimals([' ',' ',' ',' ',' ',' ',' ',' ',' ',' ']));
     }
-    set_neg() { store.dispatch(hpNeg('-')); }
+    set_neg() { 
+	console.log('set_neg');
+	store.dispatch(hpNeg('-')); }
     clear_digit(i) { this.set_digit(i, ' '); }
     set_digit(i, d) { store.dispatch(hpDigit(this._digits, i, d)); }
     set_comma(i) { store.dispatch(hpDecimal(this._decimals, i, ',')); }
@@ -798,10 +865,6 @@ ${generateStyles()}
 	    throw new Error("aijk.emit is undefined in emit");
 	}
 	key(aijk.emit);
-	// store.dispatch(hpEmit(aijk.emit));
-	// this doesn't work because the stream of aijk.emit's
-	// may contain repeats and those won't register as
-	// changes in redux, lot's of good stuff to read at redux
     }
 }
 

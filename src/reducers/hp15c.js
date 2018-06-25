@@ -6,8 +6,7 @@ This code may only be used under the BSD style license found at http://recri.git
 
 import { 
     HP_USER, HP_SHIFT, HP_TRIGMODE, HP_COMPLEX, HP_PROGRAM, 
-    HP_NEG, HP_DIGITS, HP_DECIMALS,
-    HP_EMIT
+    HP_NEG, HP_DIGITS, HP_DECIMALS
 } from '../actions/hp15c.js';
 
 import { store } from '../store.js';
@@ -18,7 +17,7 @@ const hp15c = (state = {
     trigmode: null,
     complex: false,
     program: false,
-    neg: ' ',
+    neg: '-',
     digits:  ['8','8','8','8','8','8','8','8','8','8'],
     decmals: [' ',' ',' ',' ',' ',' ',' ',' ',' ',' ']
 }, action) => {
@@ -31,7 +30,6 @@ const hp15c = (state = {
     case HP_NEG: return {...state, neg: action.neg };
     case HP_DIGITS: return {...state, digits: action.digits };
     case HP_DECIMALS: return {...state, decimals: action.decimals };
-    case HP_EMIT: return {...state, emit: action.key };
     default: return state;
     }
 }

@@ -12,7 +12,6 @@ export const HP_PROGRAM = 'HP_PROGRAM';
 export const HP_NEG = 'HP_NEG';
 export const HP_DIGITS = 'HP_DIGITS';
 export const HP_DECIMALS = 'HP_DECIMALS';
-export const HP_EMIT = 'HP_EMIT';
 
 export const hpUser = (user) => (dispatch) => dispatch({ type: HP_USER, user });
 export const hpShift = (shift) => (dispatch) => dispatch({ type: HP_SHIFT, shift });
@@ -26,4 +25,3 @@ export const hpDigit = (digits, i, d) => (dispatch) =>
     dispatch({ type: HP_DIGITS, digits: digits.map((old,iold) => iold===i?d:old) });
 export const hpDecimal = (decimals, i, d) => (dispatch) =>
     dispatch({ type: HP_DECIMALS, decimals: decimals.map((old,iold) => iold===i?d:old) });
-export const hpEmit = (key) => (dispatch) => dispatch({ type: HP_EMIT, key });
