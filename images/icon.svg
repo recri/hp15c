@@ -1,9 +1,16 @@
 <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    * { font: bold 30px courier; }
-  </style>
-  <rect x="0" y="0" width="25" height="50" stroke="black" fill="#c58720"></rect>
-  <rect x="25" y="0" width="25" height="50" stroke="black" fill="#479ea5"></rect>
-  <text x="12" y="25">f</text>
-  <text x="37" y="25">g</text>
+<style><![CDATA[
+text{
+    font: bold 36px Verdana, Helvetica, Arial, sans-serif;
+}
+]]></style>
+  <rect x="0" y="0" width="50" height="50" stroke="black" fill="#322" />
+  <rect x="2" y="2" width="21" height="21" stroke="black" fill="#302b31" />
+  <text x="12.5" y="18.5" text-anchor="middle" stroke="white">GSB</text>
+  <rect x="27" y="2" width="21" height="21" stroke="black" fill="#302b31" />
+  <text x="37.5" y="18.5" text-anchor="middle" stroke="white">R⭣</text>
+  <rect x="2" y="27" width="21" height="21" stroke="black" fill="#c58720"></rect>
+  <text x="12.5" y="43.5" text-anchor="middle" stroke="black">f</text>
+  <rect x="27" y="27" width="21" height="21" stroke="black" fill="#479ea5"></rect>
+  <text x="37.5" y="43.5" text-anchor="middle" stroke="black">g</text>
 </svg>
