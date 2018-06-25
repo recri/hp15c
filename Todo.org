@@ -58,3 +58,4 @@
 [x] rewrote all display updating to not require any render, it
 	all happens in the updateState, but there are still some
 	render's slipping through.
+[x] adjusted the .calc{height:100vh} from 95vh.

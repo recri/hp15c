@@ -431,7 +431,7 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
   .calc { 
     position:relative; 
     width:100%; /* 640px; */
-    height:95vh; /* 400px; */
+    height:100vh; /* 400px; */
     background-color:var(--key-bezel-background);
   }
   .bezel {
