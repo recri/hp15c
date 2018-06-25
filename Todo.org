@@ -1,4 +1,4 @@
-* New todo list for hp15c alone, 2018-06-24
+[x] New todo list for hp15c alone, 2018-06-24
 [ ] adjust the lcd panel placement of digits
 [ ] adjust the lcd panel placement of indicators
 [ ] adjust the lcd indicator font
@@ -31,5 +31,24 @@
 [ ] the adaptive layout with overlay shifts produces multiple
 	layouts containing the same keys in the same and/or
 	different locations.
-
-	
+[ ] research accessability and calculators some more.  Add back
+	the aria-lablel's to the keys.
+[ ] make a separate calculator page with testing enabled, use
+	a concatenation of the calculator source with the test
+	source and import from that.
+[ ] [on] doesn't clear the indicators.  Doesn't in the original
+	simulator either.
+[o] push the emits through the redux reducer, too, so we might be
+	able to get keystroke macros from redux tracing.
+	Won't work as I thought, repeated emits don't register as
+	changes, more discussion in _shouldRender and _onEmit.
+[ ] test runs 17 seconds vs 10 seconds for the original, could
+	move to entirely css based display where the digit and
+	decimal segments are all drawn and then hidden or displayed
+	according to the digits and decimals specified.  Ie, draw
+	all 8's and commas, tag each segment, then set
+		segment.visibility="visible"
+		segment.visibility="hidden"
+	according to whether the segment is needed to draw the
+	desired digit or decimal.  7 segments per digit, 2 per
+	decimal, 10 positions, and the negative sign.

@@ -13,11 +13,11 @@ import { SharedStyles } from './shared-styles.js';
 
 import { connect } from 'pwa-helpers/connect-mixin.js';
 import { store } from '../store.js';
-import { key, init, start_tests } from './common/hp15c.js';
+import { key, init } from './common/hp15c.js';
 
 import { 
     hpUser, hpShift, hpTrigmode, hpComplex, hpProgram, hpNeg,
-    hpDigits, hpDecimals, hpDigit, hpDecimal
+    hpDigits, hpDecimals, hpDigit, hpDecimal, hpEmit
 } from '../actions/hp15c.js';
 
 const KeyCap = (label, hotkey) => ({ label, hotkey });
@@ -174,6 +174,7 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	    }
 	    
 	})));
+	// initialize properties
 	this._shift = 'f';	// want to light up both, ah well
 	this._complex = true;
 	this._trigmode = 'GRAD';
@@ -182,6 +183,11 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	this._neg = '-';
 	this._digits =   ['8','8','8','8','8','8','8','8','8','8'];
 	this._decimals = [',',',',',',',',',',',',',',',',',',','];
+
+	// initialize other local values
+	this.shouldRenderCount = 0;
+	
+	// arrange to get some more work done later
 	this.renderComplete.then(() => {
 	    /* arrange to monitor focus, keyboard, and touch events for everyone */
 	    this.shadowRoot.addEventListener('focus', e => this._onFocus(e), true);
@@ -208,6 +214,7 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	    _neg: String,
 	    _digits: Array,
 	    _decimals: Array,
+	    _emit: String,
 	}
     }
     _stateChanged(state) {
@@ -219,8 +226,9 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	this._neg = state.hp15c.neg;
 	this._digits = state.hp15c.digits;
 	this._decimals = state.hp15c.decimals;
+	this._emit = state.hp15c.emit;
     }
-    _render({_user, _shift, _trigmode, _complex, _program, _neg, _digits, _decimals}) {
+    _render({_user, _shift, _trigmode, _complex, _program, _neg, _digits, _decimals, _emit}) {
 	// generate styles
 	const generateStyles = () => {
 	    const generateUser = () =>
@@ -637,6 +645,42 @@ ${generateStyles()}
 </section>`;
     }
 
+    // before each render, return true to render, false to defer
+    _shouldRender(properties, changed, previous) {
+	this.shouldRenderCount += 1;
+	var render = false;
+	for (let p in changed) {
+	    switch (p) {
+	    case '_neg':
+	    case '_digits':
+	    case '_decimals':
+		render = true;
+		continue;
+	    case '_shift':
+		render = true;
+		continue;
+	    case '_trigmode':
+		render = true;
+		continue;
+	    case '_user':
+	    case '_complex':
+	    case '_program':
+		render = true;
+		continue;
+	    case '_emit':
+		// the problem with this is that it will cause property changes
+		// perhaps we should both key() and hpEmit() in _onEmit()
+		console.log(`_shouldRender[${this.shouldRenderCount}]: ${p} has changed from ${previous[p]} to ${changed[p]}`)
+		continue;
+	    case 'active':
+		continue;
+	    default:
+		console.log(`_shouldRender[${this.shouldRenderCount}]: ${p} has changed from ${previous[p]} to ${changed[p]}`)
+		continue;
+	    }
+	}
+	return render;
+    }
     // after each render, but most especially after the first
     _didRender(properties, changed, previous) {
 	if ( ! this.focused) {
@@ -666,8 +710,6 @@ ${generateStyles()}
     set_trigmode(mode) { store.dispatch(hpTrigmode(mode)); } // mode in [null, 'RAD', 'GRAD']
     set_user(on) { store.dispatch(hpUser(on)); } // on in [true, false]
     set_complex(on) { store.dispatch(hpComplex(on)); }
-    // included tests.js inside hp15c.js and exported start_tests()
-    run_test() { start_tests(); }
 
     // event listeners
     _onFocus(event) { this._focusee = event.target; }
@@ -756,6 +798,10 @@ ${generateStyles()}
 	    throw new Error("aijk.emit is undefined in emit");
 	}
 	key(aijk.emit);
+	// store.dispatch(hpEmit(aijk.emit));
+	// this doesn't work because the stream of aijk.emit's
+	// may contain repeats and those won't register as
+	// changes in redux, lot's of good stuff to read at redux
     }
 }
 
