@@ -438,7 +438,7 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     position:absolute;
     top: 1.25%;
     left: 3.3%;
-    width: 93.5%;
+    width: 93.4%;
     height: 27.5%;
     background-color:var(--lcd-bezel-background);
   }
@@ -478,9 +478,9 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
   .keypad {
     position:absolute;
     top:30%;
-    left:3.5%;
+    left:3.3%;
     height:65%;
-    width:92%;
+    width:91.7%;
     border-style:solid;
     border-width:3px 5px 10px 5px;
     border-color:var(--key-border-color);
@@ -512,8 +512,8 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
   /* inner column */
   div.in-col {
     width: 84%;
-    height: 65%;
-    top: 17%;
+    height: 68%;
+    top: 16%;
     -moz-border-radius: 1px;
     -webkit-border-radius: 1px;
     border-radius: 1px;
@@ -600,8 +600,8 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     height:200%;
   }
   .row.row-2 .col.col-5 .in-col {
-    height: 80%;
-    top: 10%;
+    height: 84%;
+    top: 8%;
     z-index: 2;	// move above the row that gets built later
   }
   .row.row-2 .col.col-5 div.in-col span.btn.nshift {
