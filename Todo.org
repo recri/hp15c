@@ -31,18 +31,20 @@
 [x] the adaptive layout with overlay shifts produces multiple
 	layouts containing the same keys in the same and/or
 	different locations.  Wide and Narrow for now.
-[ ] research accessability and calculators some more.  Add back
-	the aria-lablel's to the keys.
+[ ] research accessability and calculators some more.
+[x] Add back the aria-label's to the keys.
 [ ] make a separate calculator page with testing enabled, use
 	a concatenation of the calculator source with the test
 	source and import from that.
+	No, better, import the calculator through the test code,
+	so test.js imports hp15c.js, and then exports it.
 [ ] [on] doesn't clear the indicators.  Doesn't in the original
 	simulator either.
 [o] push the emits through the redux reducer, too, so we might be
 	able to get keystroke macros from redux tracing.
 	Won't work as I thought, repeated emits don't register as
 	changes, more discussion in _shouldRender and _onEmit.
-[ ] test runs 17 seconds vs 10 seconds for the original, could
+[x] test runs 17 seconds vs 10 seconds for the original, could
 	move to entirely css based display where the digit and
 	decimal segments are all drawn and then hidden or displayed
 	according to the digits and decimals specified.  Ie, draw
@@ -62,3 +64,27 @@
 	render's slipping through.
 [x] adjusted the .calc{height:100vh} from 95vh.
 [x] rebuilt the icon from a screenshot, 
+[ ] hah, when programming, some commands depend on the alternate
+	labelling of keys.  So [f][LBL] uses [A], [B], etc. as
+	label targets, but the [A], [B], etc. are not displayed.
+	So, the LBL, GTO, GSB entries need to activate the key
+	labels that identify labels.
+	And the registers want to see digits and decimals.
+[ ] PRGM annunciator is outside the LCD on my phone.
+[x] fixed the Re<->Im keycap, which was already marked fixed.
+[ ] css fix for <sub>x</sub><sup>y</sup> non-alignnment
+	.nobr {
+	   white-space: nowrap;
+	}
+	.supsub {
+	   display: inline-block;
+	   margin: -9em 0;
+	   vertical-align: -0.55em;
+	   line-height: 1.35em;
+	   font-size: 70%;
+	   text-align: left;
+	}
+	You might already have the "nobr" class as a <nobr> replacement.
+	Now to express the molecular formula for sulfate, use the "supsub"
+	class as follows:
+	<span class="nobr">SO<span class="supsub">2-<br />4</span></span>

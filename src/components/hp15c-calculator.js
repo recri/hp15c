@@ -19,128 +19,146 @@ import {
     hpDigits, hpDecimals, hpDigit, hpDecimal
 } from '../actions/hp15c.js';
 
-const KeyCap = (label, hotkey) => ({ label, hotkey });
+var hotkeys = {};		// built in first constructor
+
+const KeyCap = (label, hotkey, alabel, hlabel) => {
+    if (typeof label !== 'string') {
+	console.log(`label is not a string: {${label}, ${hotkey}, ${alabel}, ${hlabel}}`);
+    } else if (label === '') {
+	/* ignore, it's a dummy */ 
+    } else {
+	if ( ! hlabel)
+	    hlabel = label;
+	if ( ! alabel) 
+	    console.log(`no alabel for ${label}`);
+	if ( hotkey ) {
+	    if (typeof hotkey !== 'string') 
+		console.log(`hotkey is not a string: {${label}, ${hotkey}, ${alabel}, ${hlabel}}`);
+	}
+    }
+    return ({ label, hotkey, alabel, hlabel });
+}
 
 const KeyCaps = (n, f, g) => ({ n, f, g });
 
 const keypad = [ [ // row 0
-    KeyCaps(KeyCap(html`√<i>x</i>`, 'q'),
-	    KeyCap('A', 'A'),
-	    KeyCap(html`<i>x</i><sup>2</sup>`, '@')),
-    KeyCaps(KeyCap(html`<i>e</i><sup><i>x</i><sup>`,'E'),
-	    KeyCap('B','B'),
-	    KeyCap('LN',)),
-    KeyCaps(KeyCap(html`10<sup><i>x</i></sup>`,')'),
-	    KeyCap('C','C'),
-	    KeyCap('LOG')),
-    KeyCaps(KeyCap(html`<i>y</i><sup><i>x</i></sup>`,'^'),
-	    KeyCap('D','D'),
-	    KeyCap('%','%')),
-    KeyCaps(KeyCap(html`1/<i>x</i>`, '\\'),
-	    KeyCap('E'),
-	    KeyCap('Δ%')),
-    KeyCaps(KeyCap('CHS', '_'),
-	    KeyCap('MATRIX'),
-	    KeyCap('ABS', 'a')),
-    KeyCaps(KeyCap('7', '7'),
-	    KeyCap('FIX'),
-	    KeyCap('DEG')),
-    KeyCaps(KeyCap('8', '8'),
-	    KeyCap('SCI'),
-	    KeyCap('RAD')),
-    KeyCaps(KeyCap('9','9'),
-	    KeyCap('ENG'),
-	    KeyCap('GRD')),
-    KeyCaps(KeyCap('÷', '/'),
-	    KeyCap('SOLVE'),
-	    KeyCap(html`<i>x</i>≤<i>y</i>`))
+    KeyCaps(KeyCap('x^.5',	'q',	'square root of x', html`√<i>x</i>`),
+	    KeyCap('A',		'A',	'program or matrix label'),
+	    KeyCap('x^2',	'@',	'x squared', html`<i>x</i><sup>2</sup>`)),
+    KeyCaps(KeyCap('e^x',	'E',	'e raised to the x power', html`<i>e</i><sup><i>x</i><sup>`),
+	    KeyCap('B',		'B',	'program or matrix label'),
+	    KeyCap('LN',	null,	'natural logarithm of x')),
+    KeyCaps(KeyCap('10^x',	')',	'ten raised to the x power', html`10<sup><i>x</i></sup>`),
+	    KeyCap('C',		'C',	'program or matrix label'),
+	    KeyCap('LOG',	null,	'logarithm to the base ten of x')),
+    KeyCaps(KeyCap('y^x',	'^',	'y raised to the x power', html`<i>y</i><sup><i>x</i></sup>`),
+	    KeyCap('D',		'D',	'program or matrix label'),
+	    KeyCap('%',		'%',	'x per cent of y')),
+    KeyCaps(KeyCap('1/x',	'\\',	'one divided by x', html`1/<i>x</i>`),
+	    KeyCap('E',		null,	'program or matrix label'),
+	    KeyCap('Δ%',	null,	'per cent change from y to x')),
+    KeyCaps(KeyCap('CHS',	'_',	'change sign of x or exponent'),
+	    KeyCap('MATRIX',	null,	'matrix operations, prefix'),
+	    KeyCap('ABS',	'a',	'absolute value of x')),
+    KeyCaps(KeyCap('7',		'7',	'numeral seven'),
+	    KeyCap('FIX',	null,	'fixed point numeric display, prefix'),
+	    KeyCap('DEG',	null,	'present angular measure in degrees')),
+    KeyCaps(KeyCap('8',		'8',	'numeral eight'),
+	    KeyCap('SCI',	null,	'scientific numeric display, prefix'),
+	    KeyCap('RAD',	null,	'present angular measure in radians')),
+    KeyCaps(KeyCap('9',		'9',	'numeral nine'),
+	    KeyCap('ENG',	null,	'engineering numeric display, prefix'),
+	    KeyCap('GRD',	null,	'present angular measure in grad')),
+    KeyCaps(KeyCap('÷',		'/',	'y divided by x'),
+	    KeyCap('SOLVE',	null,	'solves for the real root of a function, prefix'),
+	    KeyCap('x≤y',	null,	'x less than or equal to y', html`<i>x</i>≤<i>y</i>`))
 ], [ // row 1
-    KeyCaps(KeyCap('SST','T'),
-	    KeyCap('LBL'),
-	    KeyCap('BST')),
-    KeyCaps(KeyCap('GTO','G'),
-	    KeyCap('HYP'),
-	    KeyCap(html`HYP<sup>-1</sup>`)),
-    KeyCaps(KeyCap('SIN', 's'),
-	    KeyCap('DIM'),
-	    KeyCap(html`SIN<sup>-1</sup>`)),
-    KeyCaps(KeyCap('COS', 'c'),
-	    KeyCap('(i)'),
-	    KeyCap(html`COS<sup>-1</sup>`)),
-    KeyCaps(KeyCap('TAN', 't'),
-	    KeyCap('I', 'I'),
-	    KeyCap(html`TAN<sup>-1</sup>`)),
-    KeyCaps(KeyCap('EEX', 'e'),
-	    KeyCap('RESULT'),
-	    KeyCap('π', 'p')),
-    KeyCaps(KeyCap('4', '4'),
-	    KeyCap('x⇄'),	// fixed
-	    KeyCap('SF')),
-    KeyCaps(KeyCap('5','5'),
-	    KeyCap('DSE'),
-	    KeyCap('CF')),
-    KeyCaps(KeyCap('6','6'),
-	    KeyCap('ISG'),
-	    KeyCap('F?')),
-    KeyCaps(KeyCap('×', '*'),
-	    KeyCap(html`∫<sub><i>y</i></sub><sup><i>x</i></sup>`),
-	    KeyCap(html`<i>x</i>=0`))
+    KeyCaps(KeyCap('SST',	'T',	'single step program'),
+	    KeyCap('LBL',	null,	'label program location, prefix'),
+	    KeyCap('BST',	null,	'backward step')),
+    KeyCaps(KeyCap('GTO',	'G',	'go to label, prefix'),
+	    KeyCap('HYP',	null,	'hyperbolic trig, prefix'),
+	    KeyCap('HYP^-1',	null,	'inverse hyperbolic trig, prefix', html`HYP<sup>-1</sup>`)),
+    KeyCaps(KeyCap('SIN',	's',	'sine of x'),
+	    KeyCap('DIM',	null,	'matrix dimension, prefix'),
+	    KeyCap('SIN^-1',	null,	'arcsine of x',	html`SIN<sup>-1</sup>`)),
+    KeyCaps(KeyCap('COS',	'c',	'cosine of x'),
+	    KeyCap('(i)',	null,	'momentarily display imaginary part of x, or indirect indexing'),
+	    KeyCap('COS^-1',	null,	'arccosine of x', html`COS<sup>-1</sup>`)),
+    KeyCaps(KeyCap('TAN',	't',	'tangent of x'),
+	    KeyCap('I',		'I',	'imaginary unit, or index register'),
+	    KeyCap('TAN^-1',	null,	'arctangent of x', html`TAN<sup>-1</sup>`)),
+    KeyCaps(KeyCap('EEX',	'e',	'enter exponent'),
+	    KeyCap('RESULT',	null,	'speciy result matrix, prefix'),
+	    KeyCap('π',		'p',	'constant pi')),
+    KeyCaps(KeyCap('4',		'4',	'numeral four'),
+	    KeyCap('x⇄',	null,	'x exchange with register, prefix'),
+	    KeyCap('SF',	null,	'set flag, prefix')),
+    KeyCaps(KeyCap('5',		'5',	'numeral five'),
+	    KeyCap('DSE',	null,	'decrement and skip if equal to or less than, prefix'),
+	    KeyCap('CF',	null,	'clear flag, prefix')),
+    KeyCaps(KeyCap('6',		'6',	'numeral six'),
+	    KeyCap('ISG',	null,	'increment and skip if greater than, prefix'),
+	    KeyCap('F?',	null,	'test flag, prefix')),
+    KeyCaps(KeyCap('×',		'*',	'y multiplied by x'),
+	    KeyCap('∫_y^x',	null,	'definite integral from y to x, prefix', html`∫<sub><i>y</i></sub><sup><i>x</i></sup>`),
+	    KeyCap('x=0',	null,	'x greater than or equal to zero', html`<i>x</i>=0`))
 ], [ // row 2
-    KeyCaps(KeyCap('R/S','P'),
-	    KeyCap('PSE'),
-	    KeyCap('P/R')),
-    KeyCaps(KeyCap('GSB', 'U'),
-	    KeyCap('∑'),
-	    KeyCap('RTN')),
-    KeyCaps(KeyCap('R↓', 'r'),	// fixed
-	    KeyCap('PRGM'),
-	    KeyCap('R↑')),	// fixed
-    KeyCaps(KeyCap(html`<i>x</i>⇄<i>y</i>`, 'x'),	// fixed
-	    KeyCap('REG'),
-	    KeyCap('RND')),
-    KeyCaps(KeyCap('←', '\b'),	// fixed
-	    KeyCap('PREFIX'),
-	    KeyCap(html`CL<i>x</i>`)),
-    KeyCaps(KeyCap(html`E<br>N<br>T<br>E<br>R`, ['\r', '\n', ' ']),
-	    KeyCap('RAN#','\x12'),
-	    KeyCap(html`LST<i>x</i>`, 'L')),
-    KeyCaps(KeyCap('1', '1'),
-	    KeyCap('→R'),	// fixed
-	    KeyCap('→P')),	// fixed
-    KeyCaps(KeyCap('2','2'),
-	    KeyCap('→H.MS'),	// fixed
-	    KeyCap('→H')),	// fixed
-    KeyCaps(KeyCap('3','3'),
-	    KeyCap('→RAD'),	// fixed
-	    KeyCap('→DEG')),	// fixed
-    KeyCaps(KeyCap('-', '-'),
-	    KeyCap('Re⮀Im'),	// fixed
-	    KeyCap('TEST'))
+    KeyCaps(KeyCap('R/S',	'P',	'run or stop program'),
+	    KeyCap('PSE',	null,	'pause program'),
+	    KeyCap('P/R',	null,	'enter or run program')),
+    KeyCaps(KeyCap('GSB',	'U',	'go to subroutine, prefix'),
+	    KeyCap('∑',		null,	'clear summation'),
+	    KeyCap('RTN',	null,	'return from subroutine')),
+    KeyCaps(KeyCap('R↓',	'r',	'roll stack down'),
+	    KeyCap('PRGM',	null,	'clear program'),
+	    KeyCap('R↑',	null,	'roll stack up')),
+    KeyCaps(KeyCap('x⇄y',	'x',	'x exchange y', html`<i>x</i>⇄<i>y</i>`),
+	    KeyCap('REG',	null,	'clear register, prefix'),
+	    KeyCap('RND',	null,	'round to current display format precision')),
+    KeyCaps(KeyCap('←',		'\b',	'erase last digit entered'),
+	    KeyCap('PREFIX',	null,	'clear prefix'),
+	    KeyCap('CLx',	null,	'clear x', html`CL<i>x</i>`)),
+    // add back  '\n', ' ' as hotkeys for enter, except not ' ' because keyboard traversal needs it
+    KeyCaps(KeyCap('ENTER',	'\r',	'enter x onto stack',	html`<span style="line-height:1">E<br>N<br>T<br>E<br>R</span>`),
+	    KeyCap('RAN#',	'\x12',	'random number'),
+	    KeyCap('LSTx',	'L',	'last x entered', html`LST<i>x</i>`)),
+    KeyCaps(KeyCap('1',		'1',	'numeral one'),
+	    KeyCap('→R',	null,	'convert x and y into rectangular'),
+	    KeyCap('→P',	null,	'convert x and y into polar')),
+    KeyCaps(KeyCap('2',		'2',	'numeral two'),
+	    KeyCap('→H.MS',	null,	'convert x.fraction into x.mmss (minutes and seconds)'),
+	    KeyCap('→H',	null,	'convert x.mmss (minutes and seconds )into x.fraction')),
+    KeyCaps(KeyCap('3',		'3',	'numeral 3'),
+	    KeyCap('→RAD',	null,	'convert x into radians'),
+	    KeyCap('→DEG',	null,	'convert x into degrees')),
+    KeyCaps(KeyCap('-',		'-',	'subtract x from y'),
+	    KeyCap('Re⇄Im',	null,	'real exchange imaginary'),
+	    KeyCap('TEST',	null,	'conditional test on x, prefix'))
 ], [ // row 3
-    KeyCaps(KeyCap('ON','\x1b')),
-    KeyCaps(KeyCap('f', 'f')),
-    KeyCaps(KeyCap('g', 'g')),
-    KeyCaps(KeyCap('STO', 'S'),
-	    KeyCap('FRAC'),
-	    KeyCap('INT', 'i')),
-    KeyCaps(KeyCap('RCL', 'R'),
-	    KeyCap('USER'),
-	    KeyCap('MEM')),
-    KeyCaps(KeyCap('')),		// descender of ENTER
-    KeyCaps(KeyCap('0', '0'),
-	    KeyCap(html`<i>x</i>!`, '!'),
-	    KeyCap(html`<i>x̄</i>`)),
-    KeyCaps(KeyCap('.','.'),
-	    KeyCap('ŷ,r'),
-	    KeyCap('s')),
-    KeyCaps(KeyCap('∑+',';'),
-	    KeyCap('L.R.'),
-	    KeyCap('∑-')),
-    KeyCaps(KeyCap('+', '+'),
-	    KeyCap(html`P<i>y,x</i>`),
-	    KeyCap(html`<i>Cy,x</i>`))
+    KeyCaps(KeyCap('ON',	'\x1b',	'power on or off')),
+    KeyCaps(KeyCap('f',		'f',	'access gold functions, prefix')),
+    KeyCaps(KeyCap('g',		'g',	'access blue functions, prefix')),
+    KeyCaps(KeyCap('STO',	'S',	'store x into a register, prefix'),
+	    KeyCap('FRAC',	null,	'fractional part of x'),
+	    KeyCap('INT',	'i',	'integer part of x')), 
+    KeyCaps(KeyCap('RCL',	'R',	'recall x from a register, prefix'),
+	    KeyCap('USER',	null,	'user mode'),
+	    KeyCap('MEM',	null,	'memory status')),
+    KeyCaps(KeyCap('',		null,	'button covered by ENTER, should not be seen')),
+    KeyCaps(KeyCap('0',		'0',	'numeral zero'),
+	    KeyCap('x!',	'!',	'factorial of x', html`<i>x</i>!`),
+	    KeyCap('x̄',		null,	'compute mean of x and y values accumulated for summation', html`<i>x̄</i>`)),
+    KeyCaps(KeyCap('.',		'.',	'decimal point'),
+	    KeyCap('ŷ,r',	null,	"compute linear estimate and correlation coefficient"),
+	    KeyCap('s',		null,	'compute sample standard deviations of x and y accumulated for summation')),
+    KeyCaps(KeyCap('∑+',	';',	'add x and y to the summation'),
+	    KeyCap('L.R.',	null,	'compute linear regression of x and y accumulated for summation'),
+	    KeyCap('∑-',	null,	'remove x and y from summation')),
+    KeyCaps(KeyCap('+',		'+',	'add y and x'),
+	    KeyCap('Py,x',	null,	'permutations, number of possible arrangements of y items taken x at a time', html`P<i>y,x</i>`),
+	    KeyCap('Cy,x',	null,	'combinations, number of possible sets of y items taken x at a time', html`<i>Cy,x</i>`))
 ] ];
-var hotkeys = {};		// built in first constructor
 
 const _ignore = (e) => false;	// dummy event handler
 
@@ -392,14 +410,11 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	// generate keypad
 	const span = (aijk,i,j,k) => {
 	    if (! aijk) return html``;
-	    var {sclass, alabel, label} = aijk;
-	    if ( ! sclass) sclass = '';
+	    var {alabel, hlabel} = aijk;
 	    const kclass = k ? `${k}shift` : '';
-	    return sclass && alabel ?
-		html`<span aijk=${aijk} class$="btn ${kclass} ${sclass}" aria-label$="${alabel}" role="button" tabindex="0">${label}</span>` :
-		alabel ?
-		html`<span aijk=${aijk} class$="btn ${kclass}" aria-label$="${alabel}" role="button" tabindex="0">${label}</span>` :
-		html`<span aijk=${aijk} class$="btn ${kclass} ${sclass}" role="button" tabindex="0">${label}</span>` ;
+	    return alabel ?
+		html`<span aijk=${aijk} class$="btn ${kclass}" aria-label$="${alabel}" role="button" tabindex="0">${hlabel}</span>` :
+		html`<span aijk=${aijk} class$="btn ${kclass}" role="button" tabindex="0">${hlabel}</span>` ;
 	}
 	const button = (r,c,side,k) => 
 	      k.f && k.g ?
