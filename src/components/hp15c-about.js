@@ -24,7 +24,7 @@ class HP15CAbout extends PageViewElement {
       <section>
         <h2>About</h2>
         <p>
-	This app is a new front end for Greg Hewitt's 
+	This app is a new front end for Greg Hewgill's 
 	<a target="_blank" href="http://hp15c.com">HP15C simulator</a>.
 	It is built as a Progressive Web App using tools from Google's 
 	<a target="_blank" href="https://polymer-project.org">Polymer Project</a>.

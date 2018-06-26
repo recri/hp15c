@@ -74,7 +74,7 @@ const keypad = [ [ // row 0
 	    KeyCap('RESULT'),
 	    KeyCap('π', 'p')),
     KeyCaps(KeyCap('4', '4'),
-	    KeyCap('x⮀'),
+	    KeyCap('x⇄'),	// fixed
 	    KeyCap('SF')),
     KeyCaps(KeyCap('5','5'),
 	    KeyCap('DSE'),
@@ -92,29 +92,29 @@ const keypad = [ [ // row 0
     KeyCaps(KeyCap('GSB', 'U'),
 	    KeyCap('∑'),
 	    KeyCap('RTN')),
-    KeyCaps(KeyCap('R⭣', 'r'),
+    KeyCaps(KeyCap('R↓', 'r'),	// fixed
 	    KeyCap('PRGM'),
-	    KeyCap('R⭡')),
-    KeyCaps(KeyCap(html`<i>x</i>⮀<i>y</i>`, 'x'),
+	    KeyCap('R↑')),	// fixed
+    KeyCaps(KeyCap(html`<i>x</i>⇄<i>y</i>`, 'x'),	// fixed
 	    KeyCap('REG'),
 	    KeyCap('RND')),
-    KeyCaps(KeyCap('⭠', '\b'),
+    KeyCaps(KeyCap('←', '\b'),	// fixed
 	    KeyCap('PREFIX'),
 	    KeyCap(html`CL<i>x</i>`)),
     KeyCaps(KeyCap(html`E<br>N<br>T<br>E<br>R`, ['\r', '\n', ' ']),
 	    KeyCap('RAN#','\x12'),
 	    KeyCap(html`LST<i>x</i>`, 'L')),
     KeyCaps(KeyCap('1', '1'),
-	    KeyCap('⭢R'),
-	    KeyCap('⭢P')),
+	    KeyCap('→R'),	// fixed
+	    KeyCap('→P')),	// fixed
     KeyCaps(KeyCap('2','2'),
-	    KeyCap('⭢H.MS'),
-	    KeyCap('⭢H')),
+	    KeyCap('→H.MS'),	// fixed
+	    KeyCap('→H')),	// fixed
     KeyCaps(KeyCap('3','3'),
-	    KeyCap('⭢RAD'),
-	    KeyCap('⭢DEG')),
+	    KeyCap('→RAD'),	// fixed
+	    KeyCap('→DEG')),	// fixed
     KeyCaps(KeyCap('-', '-'),
-	    KeyCap('Re⮀Im'),
+	    KeyCap('Re⮀Im'),	// fixed
 	    KeyCap('TEST'))
 ], [ // row 3
     KeyCaps(KeyCap('ON','\x1b')),

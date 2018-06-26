@@ -52,9 +52,11 @@
 	according to whether the segment is needed to draw the
 	desired digit or decimal.  7 segments per digit, 2 per
 	decimal, 10 positions, and the negative sign.
-[ ] some of the arrow symbols are missing on my Android phone.
+[x] some of the arrow symbols are missing on my Android phone.
 	finding a webfont link for a math friendly font is getting
-	frustrating.
+	frustrating.  Just moved to the lowest numbered unicode
+	code points for arrows and they work, though they're hard
+	to read.
 [x] rewrote all display updating to not require any render, it
 	all happens in the updateState, but there are still some
 	render's slipping through.
