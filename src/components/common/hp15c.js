@@ -1,12 +1,13 @@
 var On = true;
 var Display;		// the display handler
 var DecimalSwap;
-var Stack = [0, 0, 0, 0];
-var StackI = [0, 0, 0, 0];
-var LastX = 0;
-var LastXI = 0;
-var Reg = new Array(60);
-var DisableKeys;
+export var Stack = [0, 0, 0, 0];
+export var StackI = [0, 0, 0, 0];
+export var LastX = 0;
+export var LastXI = 0;
+export var Reg = new Array(60);
+export var DisableKeys;
+export const setDisableKeys = (value) => DisableKeys = value;
 var Entry;
 var DigitEntry = false;
 var NewDigitEntry;
@@ -18,18 +19,19 @@ var TemporaryDisplay = false;
 var Shift = 0;
 var Prefix;
 var OldPrefix;
-var LcdDisplay;
+export var LcdDisplay;
 var DisplayMode = 1; // 1=FIX 2=SCI 3=ENG
 var DisplayDigits = 4;
 var FullCircle = 360;
 var TrigFactor = Math.PI / 180;
-var Flags = [false, false, false, false, false, false, false, false, false, false];
-var User = false;
-var Prgm = false;
-var Program = [null];
-var PC = 0;
-var Running = false;
-var RunTimer = null;
+export var Flags = [false, false, false, false, false, false, false, false, false, false];
+export var User = false;
+export var Prgm = false;
+export var Program = [null];
+export var PC = 0;
+export var Running = false;
+export var RunTimer = null;
+export const setRunTimer = (value) => RunTimer = value;
 var BlinkOn = false;
 var Blinker = null;
 var ReturnStack = [];
@@ -301,7 +303,7 @@ function tanh(x) {
     return (Math.exp(2*x) - 1) / (Math.exp(2*x) + 1);
 }
 
-function Complex(re, im) {
+export function Complex(re, im) {
     this.re = re;
     this.im = im;
 
@@ -465,13 +467,14 @@ function Complex(re, im) {
 Complex.one = new Complex(1, 0);
 Complex.i = new Complex(0, 1);
 
-var A = 0;
-var B = 1;
-var C = 2;
-var D = 3;
-var E = 4;
+export var A = 0;
+export var B = 1;
+export var C = 2;
+export var D = 3;
+export var E = 4;
 
 import { Matrix } from './jsmat/matrix.js';
+export { Matrix } from './jsmat/matrix.js';
 
 function Mat() {
     if (typeof(arguments[0]) === "number" && typeof(arguments[1]) === "number") {
@@ -582,13 +585,13 @@ function Mat() {
     };
 }
 
-var g_Matrix = [new Mat(0, 0),
+export var g_Matrix = [new Mat(0, 0),
                 new Mat(0, 0),
                 new Mat(0, 0),
                 new Mat(0, 0),
                 new Mat(0, 0)];
 
-function Descriptor(label) {
+export function Descriptor(label) {
     this.label = label;
 
     this.toString = function() {
@@ -2849,7 +2852,7 @@ function decode(k) {
     return r;
 }
 
-function step() {
+export function step() {
     if (PC === 0) {
         PC = 1;
     }

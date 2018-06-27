@@ -12,14 +12,36 @@ import * as Gestures from '@polymer/polymer/lib/utils/gestures.js';
 import { connect } from 'pwa-helpers/connect-mixin.js';
 import { store } from '../store.js';
 
-import { key, init } from './common/hp15c.js';
-
 import { 
     hpUser, hpShift, hpTrigmode, hpComplex, hpProgram, hpNeg,
     hpDigits, hpDecimals, hpDigit, hpDecimal
 } from '../actions/hp15c.js';
 
-var hotkeys = {};		// built in first constructor
+/* keypad definition */
+const hotkey = {};
+
+const KeyCaps = (n, f, g) => {
+    const aij = {n, f, g};
+    ['n', 'f', 'g'].forEach(k => {
+	if (aij[k]) {
+	    if (aij[k].hotkey) {
+		hotkey[aij[k].hotkey] = aij[k];
+		if (aij[k].hotkey === '\r') {
+		    // add back  '\n', ' ' as hotkeys for enter
+		    // except not ' ' because keyboard traversal needs it
+		    hotkey['\n'] = aij[k]
+		}
+		// the first hotkey is the primary code for the key
+		aij[k].emit = aij[k].hotkey
+	    } else {
+		// keys without dedicated hotkeys
+		// are activated by the shifted primary code
+		aij[k].emit = aij.n.emit;
+	    }
+	}
+    });
+    return aij;
+}
 
 const KeyCap = (label, hotkey, alabel, hlabel) => {
     if (typeof label !== 'string') {
@@ -38,8 +60,6 @@ const KeyCap = (label, hotkey, alabel, hlabel) => {
     }
     return ({ label, hotkey, alabel, hlabel });
 }
-
-const KeyCaps = (n, f, g) => ({ n, f, g });
 
 const keypad = [ [ // row 0
     KeyCaps(KeyCap('x^.5',	'q',	'square root of x', html`√<i>x</i>`),
@@ -119,7 +139,6 @@ const keypad = [ [ // row 0
     KeyCaps(KeyCap('←',		'\b',	'erase last digit entered'),
 	    KeyCap('PREFIX',	null,	'clear prefix'),
 	    KeyCap('CLx',	null,	'clear x', html`CL<i>x</i>`)),
-    // add back  '\n', ' ' as hotkeys for enter, except not ' ' because keyboard traversal needs it
     KeyCaps(KeyCap('ENTER',	'\r',	'enter x onto stack',	html`<span style="line-height:1">E<br>N<br>T<br>E<br>R</span>`),
 	    KeyCap('RAN#',	'\x12',	'random number'),
 	    KeyCap('LSTx',	'L',	'last x entered', html`LST<i>x</i>`)),
@@ -169,28 +188,7 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	Gestures.addListener(this, 'tap', _ignore);
 	Gestures.addListener(this, 'down', _ignore);
 	Gestures.addListener(this, 'up', _ignore);
-	// map the hotkeys to the appropriate functions
-	// and set up the emitted codes for each kay
-	this.hotkey = {};
-	keypad.forEach(ai => ai.forEach(aij => ['n', 'f', 'g'].forEach(k => {
-	    if (aij[k]) {
-		if (aij[k].hotkey) {
-		    if (typeof aij[k].hotkey === 'string')
-			this.hotkey[aij[k].hotkey] = aij[k];
-		    else {
-			aij[k].hotkey.forEach(key => this.hotkey[key] = aij[k]);
-			aij[k].hotkey = aij[k].hotkey[0];
-		    }
-		    // the first hotkey is the primary code for the key
-		    aij[k].emit = aij[k].hotkey
-		} else {
-		    // keys without dedicated hotkeys
-		    // are activated by the shifted primary code
-		    aij[k].emit = aij.n.emit;
-		}
-	    }
-	    
-	})));
+
 	// initialize properties, mostly overwritten by redux
 	this._shift = 'f';	// want to light up both, ah well
 	this._complex = true;
@@ -201,9 +199,8 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	this._digits =   ['8','8','8','8','8','8','8','8','8','8'];
 	this._decimals = [',',',',',',',',',',',',',',',',',',','];
 
-	// initialize other local values
-	this.shouldRenderCount = 0;
-	
+	this.rendered = false;
+
 	// arrange to get some more work done later
 	this.renderComplete.then(() => {
 	    /* arrange to monitor focus, keyboard, and touch events for everyone */
@@ -212,9 +209,26 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	    this.shadowRoot.addEventListener('keydown', e => this._onDown(e));
 	    // this.shadowRoot.addEventListener('tap', e => this._onTap(e));
 	    /* hp15c related start up */
-	    init(this);
+	    // console.log(`renderComplete, this.calculator = ${this.calculator}, .init = ${this.calculator.init}, .key = ${this.calculator.key}`)
+	    this.calculator.init(this);
+	    /* focus initialization */
+	    this._grabFocus();
 	});
     }
+
+    /* grab the focus on load, too, whenever. */
+    _grabFocus() {
+	if ( ! this.focused ) {
+	    const lcd = this.shadowRoot.getElementById('lcd');
+	    if (lcd) {
+		lcd.focus();
+		this.focused = true;
+	    } else 
+		window.requestAnimationFrame(t => this._grabFocus());
+	} 
+	/* else if ( ! this._focusee) if (this._lastFocusee) this._lastFocusee.focus(); */
+    }
+    
     disconnectedCallback() {
 	super.disconnectedCallback();
 	Gestures.removeListener(this, 'tap', _ignore);
@@ -376,6 +390,10 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	}
     }
     _render(props) {
+	// test button
+	const test_button = () => ! this.calculator.start_tests ? '' :
+	      html`<div id="start_tests"><button on-tap=${e => this.calculator.start_tests()}>Start<br/>Tests</button></div>`;
+
 	// sign, numbers, decimal points, and commas
 	// all segments are generated once in svg
 	// visibility is modified in stateChanged
@@ -495,19 +513,17 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     top:30%;
     left:3.3%;
     height:65%;
-    width:91.7%;
-    border-style:solid;
-    border-width:3px 5px 10px 5px;
-    border-color:var(--key-border-color);
+    width:93.4%;
+    background-color:var(--key-border-color);
   }
   /* keypad */
   div.kpd { /* .cwbsc */
     position: absolute;
-    top:0;
-    left:0;
-    height:100%;    
-    width:100%;
-    background-color: black;
+    top:.75%;
+    left:1%;
+    height:96.75%;    
+    width:98%;
+    background-color: var(--key-bezel-background);
   }
   /* left and right sides of keypad */
   div.side {
@@ -657,8 +673,8 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     width:100%;
     height:100%;
     stroke:var(--fshift-color);
+    fill:none;
   }
-
   /* narrow */
   @media screen and (max-width:459px){
     div.bezel{top:1%;height:18%;}
@@ -683,7 +699,10 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 <section>
   <div class="calc">
     <div class="bezel">
-      <div class="slot"><slot></slot></div>
+      <div class="slot">
+	<slot></slot>
+        ${test_button()}
+	</div>
       <div class="lcd" id="lcd" tabindex="0">
 	<div class="digit">
 	  ${numeric_display()}
@@ -730,48 +749,17 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
   </div>
 </section>`;
     }
-
+/*   
+*/
     // before each render, return true to render, false to defer
     _shouldRender(properties, changed, previous) {
-	this.shouldRenderCount += 1;
-	var render = false;
-	for (let p in changed) {
-	    switch (p) {
-	    case '_neg':
-	    case '_digits':
-	    case '_decimals':
-		render = true;
-		continue;
-	    case '_shift':
-		render = true;
-		continue;
-	    case '_trigmode':
-		render = true;
-		continue;
-	    case '_user':
-	    case '_complex':
-	    case '_program':
-		render = true;
-		continue;
-	    case 'active':
-		continue;
-	    default:
-		console.log(`_shouldRender[${this.shouldRenderCount}]: ${p} has changed from ${previous[p]} to ${changed[p]}`)
-		continue;
-	    }
-	}
-	return render;
+	// we fiddle the dom in stateChanged, one render does us
+	return ! this.rendered;
     }
+
     // after each render, but most especially after the first
     _didRender(properties, changed, previous) {
-	if ( ! this.focused) {
-	    /* and grab the focus on load, too, whenever. */
-	    const lcd = this.shadowRoot.getElementById('lcd');
-	    if (lcd) {
-		lcd.focus();
-		this.focused = true;
-	    }
-	}
+	this.rendered = true;
     }
     
     // hp15c Display interface
@@ -793,49 +781,24 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     set_complex(on) { store.dispatch(hpComplex(on)); }
 
     // event listeners
-    _onFocus(event) { this._focusee = event.target; }
-    _onBlur(event) { this._focusee = null; }
+    _onFocus(event) { 
+	this._lastFocusee = this._focusee = event.target;
+	console.log(`_onfocus(event) ${event.target.tagName}.${event.target.className}`);
+    }
+
+    _onBlur(event) { 
+	this._focusee = null;
+    }
+
     _onTap(event) { 
 	if (event.target.aijk) {
 	    this._onEmit(event.target.aijk);
+	    event.target.focus();
+	    console.log(`event.target.focus() ${event.target.tagName}.${event.target.className}`);
 	    event.preventDefault();
 	    return;
 	}
-	switch (event.target.className) {
-	case 'calc':
-	case 'bezel':
-	case 'slot':
-	case 'lcd': 
-	case 'digit':
-	case 'indicator':
-	case 'keypad':
-	case 'kpd':
-	case 'lft side':
-	case 'rgt side':
-	case 'row lft row-0': case 'row lft row-1': case 'row lft row-2': case 'row lft row-3':
-	case 'row rgt row-0': case 'row rgt row-1': case 'row rgt row-2': case 'row rgt row-3':
-	    break;
-	default:
-	    for (let t = event.target; t.parentElement; t = t.parentElement) {
-		console.log(`search ${t.tagName} class ${t.className} for aijk`);
-		if (t.aijk) {
-		    console.log('found aijk on ancestor');
-		    this._onEmit(t.aijk);
-		    event.preventDefault();
-		    return;
-		}
-	    }
-	    for (let t = event.target; t.firstElementChild; t = t.firstElementChild) {
-		console.log(`search ${t.tagName} class ${t.className} for aijk`);
-		if (t.aijk) {
-		    console.log('found aijk on descendent');
-		    this._onEmit(t.aijk);
-		    event.preventDefault();
-		    return;
-		}
-	    }
-	    console.log(`_onTap(${event.target.tagName}.${event.target.className}) has no aijk property`);
-	}
+	console.log(`_onTap(${event.target.tagName}.${event.target.className}) has no aijk property`);
     }
     _onDown(event) { 
 	/* 
@@ -861,10 +824,10 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	if (key === ' ' && this._focusee.aijk) {
 	    // if ' ' and we are focused on a button, fire that button
 	    this._onEmit(this._focusee.aijk);
-	    event.preventDefault()
-	} else if (this.hotkey[key]) {
-	    this._onEmit(this.hotkey[key]);
-	    event.preventDefault()
+	    // event.preventDefault()
+	} else if (hotkey[key]) {
+	    this._onEmit(hotkey[key]);
+	    // event.preventDefault()
 	} else {
 	    console.log(`_onDown('${event.key}') left to system`);
 	}
@@ -878,7 +841,7 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	if ( ! aijk.emit) {
 	    throw new Error("aijk.emit is undefined in emit");
 	}
-	key(aijk.emit);
+	this.calculator.key(aijk.emit);
     }
 }
 

@@ -88,3 +88,36 @@
 	Now to express the molecular formula for sulfate, use the "supsub"
 	class as follows:
 	<span class="nobr">SO<span class="supsub">2-<br />4</span></span>
+[ ] solve the keypad vs bezel alignment issue by making the keypad a grey
+	rectangle aligned exactly to the bezel with no border, and then
+	placing the kpd container over that with the exact size and placement
+	to create the variable width border.
+[ ] map {es6,esm,es5}.hp15c.elf.org at pair.com
+[ ] sniff browser capabilities and offer alternative links for older browsers
+	in index.html, right next to the <noscript></noscript>.
+[ ] matrix operations always act on A, B, C, D, or E, so
+	[DIM] is always followed by A, B, C, D, or E
+	[RESULT] is always followed by A, B, C, D, or E
+	during matrix entry and recall,
+	[STO] is always followed by A, B, C, D, or E
+	[RCL] is always followed by A, B, C, D, or E
+[ ] STO, RCL, and x⇄ are always followed by a register identifier
+	which is a digit, a decimal followed by a digit, I for the index
+	register, or (i) for indirecting through the index register
+	except they can also interpolate a +, -, *, or / which combines the
+	register with x, so STO + 0 sets register[0] += x, and RCL / 1 sets
+	x /= register[1].
+[ ] LBL, GTO, GSB take A, B, C, D, E, 0-9, and .0-.9 as labels
+	GTO also accepts line numbers, 000-999
+[x] my orange CLEAR bracket is filling a triangle with black.
+[ ] USER mode exchanges the unshifted and fshifted functions of the left half
+	of the top row, so A, B, C, D, and E can become one stroke function calls
+	so there should be an adjustment of key labels, too.
+[x] built common/hp15c-test.js to import the common/hp15c.js through the test
+	functions
+[x] build two part calculator, one that imports the proper module and one that
+	build the calculator interface with the module, see if the multiple
+	imports share the same data space?  Suspect the multiple imports share
+	the overhead of loading the source and nothing else.
+[ ] losing focus after unshifting the keypad. Ah, the focus is going to the
+	span.btn not the in-col, the focused span gets buried when we unshift.

@@ -28,7 +28,7 @@ import { store } from '../store.js';
 import { navigate, updateDrawerState, updateLayout, installPrompt, updateOffline } from '../actions/app.js';
 
 import { menuIcon } from './hp15c-icons.js';
-import { HP15CCalculator } from './hp15c-calculator.js'; // non-lazy import for default page
+import './hp15c-base.js'; // non-lazy import for default page
 
 import { SharedStyles } from './shared-styles.js';
 
@@ -198,7 +198,8 @@ class HP15CApp extends connect(store)(LitElement) {
     <app-drawer opened="${_drawerOpened}" persistent="${_wideLayout}"
         on-opened-changed="${e => store.dispatch(updateDrawerState(e.target.opened))}">
       <nav class="drawer-list">
-	<a selected?="${_page === 'hp15c'}" href="/" title="Calculator">Calculator</a>
+	<a selected?="${_page === 'hp15c'}" href="/" title="Base Calculator">Calculator</a>
+	<a selected?="${_page === 'test'}" href="/test" title="Calculator With Tests">With Tests</a>
 	<a selected?="${_page === 'about'}" href="/about" title="About the app.">About</a>
 	${installPrompt}
       </nav>
@@ -206,9 +207,12 @@ class HP15CApp extends connect(store)(LitElement) {
 
     <!-- Main content -->
     <main class="main-content">
-      <hp15c-calculator class="page" active?="${_page === 'hp15c'}">
+      <hp15c-base class="page" active?="${_page === 'hp15c'}">
 	<button class="delegated menu-btn" title="Menu" on-click="${_ => store.dispatch(updateDrawerState(true))}">${menuIcon}</button>
-      </hp15c-calculator>
+      </hp15c-base>
+      <hp15c-test class="page" active?="${_page === 'test'}">
+	<button class="delegated menu-btn" title="Menu" on-click="${_ => store.dispatch(updateDrawerState(true))}">${menuIcon}</button>
+      </hp15c-test>
       <hp15c-about class="page" active?="${_page === 'about'}">
 	<button class="delegated menu-btn" title="Menu" on-click="${_ => store.dispatch(updateDrawerState(true))}">${menuIcon}</button>
       </hp15c-about>

@@ -36,7 +36,10 @@ const loadPage = (page) => async (dispatch) => {
     switch(page) {
     case 'hp15c': 
 	// default page already imported aggressively
-	// await import('../components/hp15c-calculator.js');
+	// await import('../components/hp15c-base.js');
+	break;
+    case 'test': 
+	await import('../components/hp15c-test.js');
 	break;
     case 'about': await import('../components/hp15c-about.js'); break;
     default: await import('../components/hp15c-404.js'); break;
