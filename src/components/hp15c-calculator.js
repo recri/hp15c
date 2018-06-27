@@ -223,10 +223,26 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	    if (lcd) {
 		lcd.focus();
 		this.focused = true;
+		this._adjustFocus();
 	    } else 
-		window.requestAnimationFrame(t => this._grabFocus());
+		window.requestAnimationFrame(_ => this._grabFocus());
 	} 
-	/* else if ( ! this._focusee) if (this._lastFocusee) this._lastFocusee.focus(); */
+    }
+
+    /* if the focus went display:none, then move focus to the row/column displayed peer */
+    _adjustFocus() {
+	if (this._focusee && this._focusee.aijk && this._focusee.style.display === 'none') {
+	    const f = this._focusee
+	    // console.log(`_adjustFocus found an orphan: ${f.tagName}.${f.className} ${f.style.display}`);
+	    for (let t = f.parentElement.firstElementChild; t !== null; t = t.nextElementSibling) {
+		if (t.style.display !== 'none') {
+		    // console.log(`_adjustFocus found displayed peer: ${t.tagName}.${t.className} ${t.style.display}`);
+		    t.focus();
+		    return
+		}
+	    }
+	}
+	window.requestAnimationFrame(_ => this._adjustFocus());
     }
     
     disconnectedCallback() {
@@ -276,6 +292,11 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
 	    if (fshb) fshb.forEach(b => b.style.display = fshb_d);
 	    if (gshb) gshb.forEach(b => b.style.display = gshb_d);
 	    if (nshb) nshb.forEach(b => b.style.display = nshb_d);
+	    /*
+	     * shift/unshift hides the currently focused button
+	     * need to pass the focus to the peer in the same row and column
+	     */
+	    window.requestAnimationFrame(_ => this._adjustFocus());
 	}
     }
     _updateTrigmode(mode) {
@@ -460,6 +481,7 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     --gshift-color: #479ea5; /* lightblue?; */
     --key-cap-color: #fff;
     --key-cap-background: #302b31;
+    font-size:2vw;
   }
   .calc { 
     position:relative; 
@@ -493,11 +515,12 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
   }
   .indicator {
     position:absolute;
-    top:65%;
+    top:70%;
     left:0;
     width:100%;
     height:25%;
-    font-size:16px;		/* at 640px overall width */
+    font-size:75%;
+    font-weight:bold;
     background-color:transparent;
     color:var(--lcd-panel-color);
   }
@@ -517,31 +540,31 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     background-color:var(--key-border-color);
   }
   /* keypad */
-  div.kpd { /* .cwbsc */
+  .kpd { /* .cwbsc */
     position: absolute;
     top:.75%;
-    left:1%;
-    height:96.75%;    
-    width:98%;
+    left:.75%;
+    height:96%;    
+    width:98.5%;
     background-color: var(--key-bezel-background);
   }
   /* left and right sides of keypad */
-  div.side {
+  .side {
     display: inline-block;
     height:100%;
     overflow:hidden;
     position:absolute;
   }
-  div.lft.side { width:50%; left:0; }
-  div.rgt.side { width:50%; left:50%; }
-  div.btm.side { height:50%; top:50%; }
+  .lft.side { width:50%; left:0; }
+  .rgt.side { width:50%; left:50%; }
+  .btm.side { height:50%; top:50%; }
   /* rows */
   /* N rows changes this height% */
-  div.row { display: block; height: 25%; position: relative; }
+  .row { display: block; height: 25%; position: relative; }
   /* columns and cells */
-  div.col { display: inline-block; height:100%; width:20%; position: absolute; vertical-align: bottom; }
+  .col { display: inline-block; height:100%; width:20%; position: absolute; vertical-align: bottom; }
   /* inner column */
-  div.in-col {
+  .in-col {
     width: 84%;
     height: 68%;
     top: 16%;
@@ -555,7 +578,7 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     position: relative;
     text-align: center;
   }
-  div.col:hover div.in-col { /* .cwbd:hover .cwdgb-tpl */
+  .col:hover .in-col { /* .cwbd:hover .cwdgb-tpl */
     -moz-box-shadow:0 1px 1px rgba(0,0,0,0.1);
     -webkit-box-shadow:0 1px 1px rgba(0,0,0,0.1);
     box-shadow:0 1px 1px rgba(0,0,0,0.1);
@@ -570,58 +593,53 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     border:1px solid #b6b6b6;
     color:#222
   }
-  span.btn { /* cwbts cwbg1|cwbg2 */
+
+  /* N columns changes these left% */
+  .col-0 { left: 0%; }
+  .col-1 { left:20%; }
+  .col-2 { left:40%; }
+  .col-3 { left:60%; }
+  .col-4 { left:80%; }
+  .col-5 { left: 0%; }
+  .col-6 { left:20%; }
+  .col-7 { left:40%; }
+  .col-8 { left:60%; }
+  .col-9 { left:80%; }
+
+  /* buttons */
+  .btn { /* cwbts cwbg1|cwbg2 */
     -moz-user-select: none;
     -webkit-user-select: none;
     -ms-user-select: none;
     display: table-cell;
     vertical-align: middle;
-  }
-  span.btn.nshfit { display:table-cell }
-  span.btn.fshift { display:none }
-  span.btn.gshift { display:none }
-
-  /* N columns changes these left% */
-  div.col-0 { left: 0%; }
-  div.col-1 { left:20%; }
-  div.col-2 { left:40%; }
-  div.col-3 { left:60%; }
-  div.col-4 { left:80%; }
-  div.col-5 { left: 0%; }
-  div.col-6 { left:20%; }
-  div.col-7 { left:40%; }
-  div.col-8 { left:60%; }
-  div.col-9 { left:80%; }
-
-  /* unshifted button labels */
-  div.in-col span { 
     background-color: var(--key-cap-background);
     color: var(--key-cap-color);
-    font-size: 14px;
+    font-size: 100%;
+    font-weight: bold;
   }
-
-  /* f shifted button labels */
-  div.in-col span.fshift { 
+  /* unshifted buttons */
+  .btn.nshfit {
+  }
+  /* f shifted buttons */
+  .btn.fshift {
+    display:none;
     color: var(--fshift-color);
-    font-size: 13px
   }
-
-  /* g shifted button labels */
-  div.in-col span.gshift { 
+  /* g shifted buttons */
+  .btn.gshift {
+    display:none;
     color: var(--gshift-color);
-    font-size: 13px
   }
-
-  /* last chance to override */
 
   /* f shift key */
-  .row.row-3 .col.col-1 .in-col span {
+  .row.row-3 .col.col-1 .in-col .btn {
     background-color: var(--fshift-color);
     color: black;
   }
 
   /* g shift key */
-  .row.row-3 .col.col-2 .in-col span {
+  .row.row-3 .col.col-2 .in-col .btn {
     background-color: var(--gshift-color);
     color: black;
   }
@@ -630,24 +648,18 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
   .row.row-2 .col.col-5 {
     height:200%;
   }
+
   .row.row-2 .col.col-5 .in-col {
     height: 84%;
     top: 8%;
     z-index: 2;	// move above the row that gets built later
   }
-  .row.row-2 .col.col-5 div.in-col span.btn.nshift {
-/* this appears to be completely screwed
-   remedied by writing ENTER as 'ENTER'.split('').join('<br>')
-    writing-mode: vertical-lr;
-    -webkit-writing-mode: vertical-lr;
-    -ms-writing-mode: vertical-lr;
-    text-orientation: upright; */
-  }
+
   .row.row-3 .col.col-5 { /* button beneath ENTER */
     display:none
   }
 
-  div.clearlabel {
+  .clearlabel {
     position:absolute;
     left:20%;
     top:47.5%;
@@ -655,18 +667,19 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     height:5%;
     color:var(--fshift-color);
     background-color:var(--key-bezel-color);
-    font-size:10px;
+    font-size:85%;
+    font-weight:bold;
     display:none;
   }
-  div.clearlabel span { 
-    display:block-inline;
+  .clearlabel span { 
+    display:inline-block;
     position:absolute;
     top:0;
     left:37.5%;
     width:25%;
     text-align:center;
   }
-  div.clearlabel svg {
+  .clearlabel svg {
     position:absolute;
     left:0;
     top:0;
@@ -675,26 +688,29 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     stroke:var(--fshift-color);
     fill:none;
   }
+
   /* narrow */
   @media screen and (max-width:459px){
-    div.bezel{top:1%;height:18%;}
-    div.lcd{top:25%;left:15%;height:50%;width:80%;}
-    /* make the lcd occupy more space */
-    div.keypad{top:20%;height:75%;}
-    div.lft.side{display:none;}
-    div.rgt.side{left:0;top:0;width:100%;height:50%;}
-    div.btm.side{display:inline-block;left:0;top:50%;width:100%;height:50%;}
+    :host{font-size:3vw;}
+    .bezel{top:1%;height:18%;}
+    .lcd{top:25%;left:15%;height:50%;width:80%;}
+    .keypad{top:20%;height:75%;}
+    .lft.side{display:none;}
+    .rgt.side{left:0;top:0;width:100%;height:50%;}
+    .btm.side{display:inline-block;left:0;top:50%;width:100%;height:50%;}
+
   }
 
   /* wide */
   @media screen and (min-width:460px){
-    div.bezel{top:1.25%;height:27.5%}
-    div.lcd{top:25%;left:15%;height:50%;width:50%;}
-    div.keypad{top:30%;height:65%}
-    div.lft.side{display:block-inline;left:0;top:0;width:50%;height:100%;}
-    div.rgt.side{left:50%;top:0;width:50%;height:100%}
-    div.btm.side{display:none;}
- }
+    :host{font-size:2vw;}
+    .bezel{top:1.25%;height:27.5%}
+    .lcd{top:25%;left:15%;height:50%;width:50%;}
+    .keypad{top:30%;height:65%}
+    .lft.side{display:inline-block;left:0;top:0;width:50%;height:100%;}
+    .rgt.side{left:50%;top:0;width:50%;height:100%}
+    .btm.side{display:none;}
+  }
 </style>
 <section>
   <div class="calc">
@@ -749,16 +765,14 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
   </div>
 </section>`;
     }
-/*   
-*/
-    // before each render, return true to render, false to defer
+
     _shouldRender(properties, changed, previous) {
-	// we fiddle the dom in stateChanged, one render does us
+	// this.renderComplete.then(() => console.log(`render complete when this.rendered = ${this.rendered}`));
 	return ! this.rendered;
     }
 
-    // after each render, but most especially after the first
     _didRender(properties, changed, previous) {
+	// console.log(`_didRender when this.rendered = ${this.rendered}`);
 	this.rendered = true;
     }
     
@@ -783,7 +797,6 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     // event listeners
     _onFocus(event) { 
 	this._lastFocusee = this._focusee = event.target;
-	console.log(`_onfocus(event) ${event.target.tagName}.${event.target.className}`);
     }
 
     _onBlur(event) { 
@@ -793,8 +806,6 @@ export class HP15CCalculator extends connect(store)(GestureEventListeners(PageVi
     _onTap(event) { 
 	if (event.target.aijk) {
 	    this._onEmit(event.target.aijk);
-	    event.target.focus();
-	    console.log(`event.target.focus() ${event.target.tagName}.${event.target.className}`);
 	    event.preventDefault();
 	    return;
 	}
